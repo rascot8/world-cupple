@@ -1,0 +1,145 @@
+Difficulty,Category,Question,Option A,Option B,Option C,Correct Answer
+Easy,Tournament,How many teams will play in the 2026 World Cup?,32,40,48,48
+Easy,Tournament,In which month does the 2026 World Cup begin?,May,June,July,June
+Easy,Tournament,What is the total number of groups in 2026?,8,12,16,12
+Easy,Tournament,Which North American country is a co-host of the 2026 tournament?,United States,England,Japan,United States
+Easy,Tournament,How many players per team are allowed on the pitch?,10,11,12,11
+Easy,Tournament,What color card does a referee show to completely expel a player?,Yellow,Green,Red,Red
+Easy,Tournament,Which country is not hosting the 2026 World Cup?,USA,Mexico,Brazil,Brazil
+Easy,Tournament,Which host city is in Canada for 2026?,Toronto,Montreal,Vancouver,Toronto
+Easy,Tournament,Where will the 2026 final be played?,Los Angeles,New York,Dallas,New York
+Easy,Tournament,What is the shape of a standard soccer ball?,Sphere,Cube,Pyramid,Sphere
+Easy,Tournament,How often is the FIFA World Cup held?,Every 2 years,Every 4 years,Every 6 years,Every 4 years
+Easy,Tournament,What part of the body cannot touch the ball?,Head,Chest,Hands,Hands
+Easy,Tournament,What is the maximum duration of a regular match?,90 minutes,100 minutes,120 minutes,90 minutes
+Easy,Tournament,What do winners of the World Cup receive?,Gold medal,World Cup Trophy,Silver plate,World Cup Trophy
+Easy,Tournament,Who is the current president of FIFA?,Sepp Blatter,Gianni Infantino,Michel Platini,Gianni Infantino
+Easy,Tournament,How many referees are on the field during a match?,1,2,3,1
+Easy,Tournament,How long is halftime in a World Cup match?,10 minutes,15 minutes,20 minutes,15 minutes
+Easy,Tournament,What happens if a knockout match ends in a draw?,Rematch,Extra time,Coin toss,Extra time
+Easy,Tournament,How many substitutions are typically allowed in regular time?,3,5,7,5
+Easy,Tournament,What does VAR stand for?,Video Assistant Referee,Visual Action Replay,Virtual Attack Rating,Video Assistant Referee
+Easy,Tournament,Which host country will have the most stadiums in 2026?,USA,Mexico,Canada,USA
+Easy,Tournament,Which type of kick restarts play after a foul?,Corner kick,Free kick,Goal kick,Free kick
+Easy,Tournament,What color is the standard referee uniform?,Neon yellow,Black,Both are common,Both are common
+Easy,Tournament,Which flag signals an offside player?,Red flag,Checkered flag,Yellow and orange flag,Yellow and orange flag
+Easy,History,Who won the World Cup in 2014?,Germany,Argentina,Netherlands,Germany
+Easy,History,Which country hosted the 1994 World Cup?,USA,Italy,France,USA
+Easy,History,Who won the World Cup in 2018?,France,Croatia,Belgium,France
+Easy,History,Which country hosted the 2014 World Cup?,Germany,Brazil,South Africa,Brazil
+Easy,History,Which country hosted the 2022 FIFA World Cup?,Russia,Qatar,Brazil,Qatar
+Easy,History,Who won the first ever World Cup in 1930?,Argentina,Uruguay,Brazil,Uruguay
+Easy,History,Which country hosted the 2006 World Cup?,Germany,Italy,France,Germany
+Easy,History,Which continent has won the most World Cups?,South America,Europe,Africa,Europe
+Easy,History,Which nation won the World Cup in 2006?,Italy,France,Germany,Italy
+Easy,History,Which nation won the World Cup in 1998?,Brazil,France,Italy,France
+Easy,History,Which country won the World Cup in 1986?,Argentina,West Germany,Brazil,Argentina
+Easy,History,Which country hosted the 2010 World Cup?,South Africa,Brazil,Germany,South Africa
+Easy,History,Which team did France defeat in the 2018 final?,Croatia,Belgium,England,Croatia
+Easy,History,Who won the World Cup in 2002?,Germany,Brazil,Italy,Brazil
+Easy,History,Which country hosted the 1998 World Cup?,Italy,France,Spain,France
+Easy,History,Which South American team won in 1978?,Argentina,Brazil,Uruguay,Argentina
+Easy,History,Which country hosted the 1990 World Cup?,Italy,Mexico,USA,Italy
+Easy,History,Which nation won the World Cup in 1966?,England,West Germany,Brazil,England
+Easy,History,Which Asian countries co-hosted the 2002 tournament?,Japan and China,South Korea and Japan,South Korea and China,South Korea and Japan
+Easy,History,Which European country won the 1982 World Cup?,Italy,West Germany,Spain,Italy
+Easy,History,Which country hosted the 1986 World Cup?,Mexico,Argentina,Colombia,Mexico
+Easy,History,Which team won the 1974 World Cup?,West Germany,Netherlands,Poland,West Germany
+Easy,History,Which country hosted the 1978 World Cup?,Brazil,Argentina,Uruguay,Argentina
+Easy,History,Which team was the runner-up in 2014?,Argentina,Germany,Netherlands,Argentina
+Medium,Tournament,How many matches in total will be played in 2026?,64,80,104,104
+Medium,Tournament,How many host cities are there for 2026?,12,16,20,16
+Medium,Tournament,What stage is added to the 2026 knockout rounds?,Round of 32,Quarterfinals,Round of 16,Round of 32
+Medium,Tournament,How many teams advance from each group stage in 2026?,Top two only,Top two and best thirds,Top three only,Top two and best thirds
+Medium,Tournament,Which continent will host the unique 2030 World Cup opening matches?,South America,Europe,Africa,South America
+Medium,Tournament,What is the minimum number of rest days a team gets between matches?,2 days,3 days,4 days,3 days
+Medium,Tournament,Which 2026 host stadium has the largest capacity?,Estadio Azteca,AT&T Stadium,MetLife Stadium,AT&T Stadium
+Medium,Tournament,How many total points are awarded for a group stage win?,2,3,4,3
+Medium,Tournament,How many points are awarded for a group stage draw?,0,1,2,1
+Medium,Tournament,What is used to determine group standings if points are tied?,Goal difference,Yellow cards,Coin toss,Goal difference
+Medium,Tournament,Which technology was fully introduced in 2018?,Goal-line technology,VAR,Electronic boots,VAR
+Medium,Tournament,How many players are in a standard penalty shootout per team?,3,5,7,5
+Medium,Tournament,What material is the modern World Cup trophy made of?,Solid Gold,Gold Plated,Brass,Solid Gold
+Medium,Tournament,Where is the FIFA headquarters located?,Geneva,Zurich,Paris,Zurich
+Medium,Tournament,Which confederation gets the most spots in 2026?,CONMEBOL,UEFA,CAF,UEFA
+Medium,Tournament,How many direct spots does Africa (CAF) get in 2026?,5,9,11,9
+Medium,Tournament,What is the maximum number of players on a final tournament roster in 2026?,23,26,30,26
+Medium,Tournament,Which host city is located in the Pacific Northwest?,Seattle,Portland,Vancouver,Seattle
+Medium,Tournament,How many teams will play in each group in 2026?,3,4,5,4
+Medium,Tournament,Which US state has two host cities for 2026?,California,Texas,Florida,Texas
+Medium,Tournament,What is the distance of a penalty kick from the goal?,10 yards,12 yards,14 yards,12 yards
+Medium,Tournament,Which city will host the 2026 third-place match?,Miami,Atlanta,Houston,Miami
+Medium,Tournament,How many total groups are there in the 2026 format?,10,12,14,12
+Medium,Tournament,What is the minimum stadium capacity allowed for a World Cup final?,60000,80000,100000,80000
+Medium,History,Which country hosted the 2006 World Cup?,Germany,Italy,France,Germany
+Medium,History,What was the name of the 2010 World Cup ball?,Jabulani,Brazuca,Telstar,Jabulani
+Medium,History,Who scored the dramatic winning goal in the 2010 final?,Andres Iniesta,Xavi,David Villa,Andres Iniesta
+Medium,History,Who scored the winning goal in the 2014 final during extra time?,Mario Gotze,Thomas Muller,Andre Schurrle,Mario Gotze
+Medium,History,Which country hosted the 1982 World Cup?,Spain,Italy,France,Spain
+Medium,History,What was the name of the 2014 World Cup ball?,Jabulani,Brazuca,Tango,Brazuca
+Medium,History,Which team did Brazil defeat in the 2002 final?,Germany,Turkey,South Korea,Germany
+Medium,History,Which nation reached the semifinals in 2018 but lost to France?,Belgium,Croatia,England,Belgium
+Medium,History,Which host nation was eliminated in the 2010 group stage?,South Africa,Brazil,Russia,South Africa
+Medium,History,Which team won the 1994 World Cup final on penalties?,Brazil,Italy,Sweden,Brazil
+Medium,History,Which European country hosted the 1958 World Cup?,Sweden,Switzerland,England,Sweden
+Medium,History,Which nation won the 1982 World Cup?,Italy,West Germany,Brazil,Italy
+Medium,History,Who did Argentina defeat in the 1986 final?,West Germany,England,Belgium,West Germany
+Medium,History,Which country hosted the 1970 World Cup?,Mexico,Brazil,Chile,Mexico
+Medium,History,Which nation reached the final in 1958 but lost to Brazil?,Sweden,France,West Germany,Sweden
+Medium,History,Which team won the 1934 World Cup?,Italy,Czechoslovakia,Germany,Italy
+Medium,History,Which country hosted the 1938 World Cup?,France,Italy,Switzerland,France
+Medium,History,Which team was runner-up in 1998?,Brazil,Croatia,Netherlands,Brazil
+Medium,History,Which nation hosted the 1962 World Cup?,Chile,Brazil,Argentina,Chile
+Medium,History,Which team won the 1962 World Cup?,Brazil,Czechoslovakia,Yugoslavia,Brazil
+Medium,History,Which country reached the 2010 final but lost to Spain?,Netherlands,Uruguay,Germany,Netherlands
+Medium,History,Which team won the 1950 World Cup?,Uruguay,Brazil,Sweden,Uruguay
+Medium,History,Which European nation hosted the 1954 World Cup?,Switzerland,Sweden,Austria,Switzerland
+Medium,History,Which team did West Germany defeat in the 1974 final?,Netherlands,Poland,Brazil,Netherlands
+Hard,Tournament,What was the original format proposed for 2026?,Three team groups,Five team groups,Four team groups,Three team groups
+Hard,Tournament,How many stadiums in Mexico will host 2026 matches?,2,3,4,3
+Hard,Tournament,Which host city for 2026 is in the US Midwest?,Kansas City,Atlanta,Boston,Kansas City
+Hard,Tournament,How many host stadiums are located in Canada for 2026?,2,3,4,2
+Hard,Tournament,Which city will host the opening match for the US national team?,Los Angeles,Miami,New York,Los Angeles
+Hard,Tournament,What is the name of the official 2026 tournament broadcast center location?,Dallas,Atlanta,Miami,Dallas
+Hard,Tournament,How many matches will be played in Canada during 2026?,10,13,15,13
+Hard,Tournament,Which stadium will host the 2026 opening match?,Estadio Azteca,SoFi Stadium,MetLife Stadium,Estadio Azteca
+Hard,Tournament,How many intercontinental playoff spots are available for 2026?,2,4,6,6
+Hard,Tournament,Which FIFA confederation will host the intercontinental playoff tournament?,CONCACAF,CONMEBOL,UEFA,CONCACAF
+Hard,Tournament,What is the total prize money pool expected for 2026?,$440 Million,$1 Billion,$2 Billion,$1 Billion
+Hard,Tournament,Which Mexican city aside from Mexico City and Monterrey is hosting?,Guadalajara,Tijuana,Cancun,Guadalajara
+Hard,Tournament,How many total matches will the 2026 champion play?,7,8,9,8
+Hard,Tournament,Which US stadium is known for its massive video board spanning the field?,AT&T Stadium,Mercedes-Benz Stadium,Lumen Field,AT&T Stadium
+Hard,Tournament,What is the name of the stadium hosting matches in Vancouver?,BC Place,Rogers Centre,Commonwealth Stadium,BC Place
+Hard,Tournament,Which 2026 host city is at the highest elevation?,Mexico City,Denver,Guadalajara,Mexico City
+Hard,Tournament,How many games will Mexico host in total?,10,13,15,13
+Hard,Tournament,Which US host city is located closest to the Mexican border?,Houston,San Diego,Los Angeles,Houston
+Hard,Tournament,What year was the expanded 48-team format officially approved?,2017,2019,2021,2017
+Hard,Tournament,Which confederation has no direct spots and must rely on playoffs?,Oceania,None,Asia,None
+Hard,Tournament,Which 2026 stadium features a retractable roof that looks like a camera aperture?,Mercedes-Benz Stadium,AT&T Stadium,NRG Stadium,Mercedes-Benz Stadium
+Hard,Tournament,Which host city has the smallest stadium capacity?,Toronto,Vancouver,Guadalajara,Toronto
+Hard,Tournament,What is the total number of knockout matches in 2026?,16,24,32,32
+Hard,Tournament,Which US host city is furthest north?,Seattle,Boston,New York,Seattle
+Hard,History,Who is the only manager to win two World Cups?,Vittorio Pozzo,Mario Zagallo,Didier Deschamps,Vittorio Pozzo
+Hard,History,In what year was the first womens World Cup held?,1991,1987,1995,1991
+Hard,History,What was the first World Cup to feature tactical substitutes?,1970,1966,1974,1970
+Hard,History,Which team has received the most red cards in World Cup history?,Argentina,Brazil,Uruguay,Brazil
+Hard,History,Which European nation won the 1954 tournament in the Miracle of Bern?,West Germany,Hungary,Austria,West Germany
+Hard,History,Who was the first player to miss a penalty in a final?,Antonio Cabrini,Roberto Baggio,Franco Baresi,Antonio Cabrini
+Hard,History,What was the first World Cup to use red and yellow cards?,1970,1974,1966,1970
+Hard,History,Which country withdrew from the 1938 World Cup due to the Anschluss?,Austria,Czechoslovakia,Hungary,Austria
+Hard,History,What was the original name of the World Cup trophy?,Jules Rimet Trophy,FIFA Gold Cup,Victory Cup,Jules Rimet Trophy
+Hard,History,Which World Cup was the first to be broadcast in color?,1970,1974,1966,1970
+Hard,History,Which team scored the most goals in a single tournament (27 goals)?,Hungary,West Germany,Brazil,Hungary
+Hard,History,Who was the referee for the controversial 1966 final?,Gottfried Dienst,Ken Aston,Pierluigi Collina,Gottfried Dienst
+Hard,History,Which nation was expelled from the 1990 qualifiers due to a fake injury?,Chile,Colombia,Peru,Chile
+Hard,History,What was the name of the dog that found the stolen trophy in 1966?,Pickles,Rover,Spot,Pickles
+Hard,History,Which World Cup had the highest average attendance per match?,1994,2014,2022,1994
+Hard,History,Which team is the only one to be eliminated without conceding a goal?,Switzerland,Italy,Uruguay,Switzerland
+Hard,History,What was the first World Cup to feature numbers on the back of shirts?,1954,1950,1958,1954
+Hard,History,Which nation lost in the final in both 1974 and 1978?,Netherlands,West Germany,Argentina,Netherlands
+Hard,History,Who was the first team to win a World Cup penalty shootout?,West Germany,France,Brazil,West Germany
+Hard,History,Which World Cup introduced the Golden Goal rule?,1998,1994,2002,1998
+Hard,History,Who was the last team to win the Jules Rimet trophy outright?,Brazil,Italy,Uruguay,Brazil
+Hard,History,Which team went undefeated in 2010 but was eliminated in the group stage?,New Zealand,Italy,Paraguay,New Zealand
+Hard,History,What was the first African country to host the World Cup?,South Africa,Morocco,Egypt,South Africa
+Hard,History,Which country had the longest gap between World Cup appearances (64 years)?,Wales,Egypt,Peru,Wales
