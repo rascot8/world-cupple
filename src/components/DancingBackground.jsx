@@ -56,7 +56,8 @@ const countryNames = Object.keys(worldCupFlags);
 
 const DancingBackground = () => {
   const canvasRef = useRef(null);
-  const { getAudioData } = useAudio();
+  const audioContext = useAudio();
+  const getAudioData = audioContext?.getAudioData || (() => null);
   const frameRef = useRef(null);
 
   useEffect(() => {
