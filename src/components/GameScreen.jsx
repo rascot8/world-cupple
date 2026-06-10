@@ -4,10 +4,13 @@ import BrandHeader from './BrandHeader';
 import { X } from 'lucide-react';
 import QuitModal from './QuitModal';
 
-const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) => {
+// question: { id, text, options } — the correct answer is NOT in this object.
+// It only becomes known via onSubmitAnswer, after the pick is locked in server-side.
+const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, t }) => {
   const { playCorrect, playWrong } = useAudio();
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [correctAnswer, setCorrectAnswer] = useState(null);
   const [timeLeft, setTimeLeft] = useState(15);
   const [isPaused, setIsPaused] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -15,11 +18,7 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
 
   useEffect(() => {
     // Randomize options
-    const rawOptions = [
-      question['Option A'],
-      question['Option B'],
-      question['Option C']
-    ];
+    const rawOptions = [...(question.options || [])];
     // Fisher-Yates shuffle
     for (let i = rawOptions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -27,6 +26,7 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
     }
     setOptions(rawOptions);
     setSelectedOption(null);
+    setCorrectAnswer(null);
     setTimeLeft(15);
     setIsPaused(false);
   }, [question]);
@@ -36,25 +36,27 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !isPaused) {
-      handleTimeOut();
+      submitAndReveal(null);
     }
   }, [timeLeft, isPaused]);
 
-  const handleTimeOut = () => {
-    setIsPaused(true);
-    setTimeout(() => {
-      onAnswer(false);
-    }, 2000);
-  };
+  // Lock in the choice (null on timeout), then reveal the answer the server sends back
+  const submitAndReveal = async (choice) => {
+    if (isPaused) return;
 
-  const handleOptionClick = (opt) => {
-    if (isPaused) return; // Prevent multiple clicks
-    
     setIsPaused(true);
-    setSelectedOption(opt);
-    
-    const isCorrect = opt === question['Correct Answer'];
-    
+    setSelectedOption(choice);
+
+    let correct = null;
+    try {
+      correct = await onSubmitAnswer(question.id, choice);
+    } catch (error) {
+      console.error('Failed to submit answer:', error);
+    }
+    setCorrectAnswer(correct);
+
+    const isCorrect = choice !== null && choice === correct;
+
     if (isCorrect) {
       playCorrect();
       setStreak(prev => prev + 1);
@@ -62,7 +64,7 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
       playWrong();
       setStreak(0);
     }
-    
+
     setTimeout(() => {
       onAnswer(isCorrect);
     }, 2000);
@@ -70,12 +72,20 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
 
   const getOptionClass = (opt) => {
     if (!isPaused) return 'bg-white/10 hover:bg-white/20 border-white/20';
-    
-    if (opt === question['Correct Answer']) {
+
+    // Submitted, waiting for the server to reveal the answer
+    if (!correctAnswer) {
+      if (opt === selectedOption) {
+        return 'bg-white/20 border-fifa-neon animate-pulse';
+      }
+      return 'bg-white/5 border-white/10 opacity-50';
+    }
+
+    if (opt === correctAnswer) {
       return 'bg-green-500 text-white border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]';
     }
-    
-    if (opt === selectedOption && opt !== question['Correct Answer']) {
+
+    if (opt === selectedOption && opt !== correctAnswer) {
       return 'bg-red-500 text-white border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]';
     }
 
@@ -87,8 +97,8 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
       {/* Background glow removed, handled by DancingBackground globally */}
 
       <BrandHeader isHero={false} />
-      
-      <button 
+
+      <button
         onClick={() => { setIsPaused(true); setShowQuitModal(true); }}
         className="absolute top-6 right-6 z-20 text-gray-400 hover:text-white transition-colors p-2"
       >
@@ -117,7 +127,7 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
 
         {/* Timer Bar */}
         <div className="w-full h-2 bg-white/10 rounded-full mb-10 overflow-hidden">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-fifa-green to-fifa-neon transition-all duration-1000 ease-linear"
             style={{ width: `${(timeLeft / 15) * 100}%` }}
           ></div>
@@ -127,7 +137,7 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
         <div className="flex-grow flex flex-col justify-center">
           <div className="mb-6">
             <h2 className="text-3xl font-black text-white leading-tight">
-              {question.Question}
+              {question.text}
             </h2>
           </div>
 
@@ -136,7 +146,7 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
             {options.map((opt, idx) => (
               <button
                 key={idx}
-                onClick={() => handleOptionClick(opt)}
+                onClick={() => submitAndReveal(opt)}
                 disabled={isPaused}
                 className={`w-full p-5 rounded-2xl border-2 text-left font-bold text-lg transition-all duration-300 transform active:scale-[0.98] ${getOptionClass(opt)}`}
               >
@@ -148,7 +158,7 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
       </div>
 
       {showQuitModal && (
-        <QuitModal 
+        <QuitModal
           onConfirm={onForfeit}
           onCancel={() => { setShowQuitModal(false); setIsPaused(false); }}
         />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { loadTriviaData } from '../utils/csvParser';
-import { ArrowLeft, X } from 'lucide-react';
+import { fetchPracticeQuestions, fetchCorrectAnswer } from '../utils/quizService';
+import { X } from 'lucide-react';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
 import QuitModal from './QuitModal';
@@ -10,10 +10,12 @@ const PracticeScreen = ({ onExit }) => {
   const { t } = useTranslation();
   const { playCorrect, playWrong } = useAudio();
   const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  
+
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [correctAnswer, setCorrectAnswer] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
 
@@ -21,10 +23,15 @@ const PracticeScreen = ({ onExit }) => {
 
   useEffect(() => {
     const initData = async () => {
-      const data = await loadTriviaData();
-      const validQs = data.filter(q => q.Question && q['Correct Answer']);
-      setQuestions(validQs);
-      pickRandomQuestion(validQs);
+      try {
+        const data = await fetchPracticeQuestions();
+        setQuestions(data);
+        pickRandomQuestion(data);
+      } catch (error) {
+        console.error('Failed to load practice questions:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     initData();
   }, []);
@@ -36,24 +43,33 @@ const PracticeScreen = ({ onExit }) => {
     setCurrentQuestion(q);
 
     // Randomize options
-    const rawOptions = [q['Option A'], q['Option B'], q['Option C']];
+    const rawOptions = [...(q.options || [])];
     for (let i = rawOptions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [rawOptions[i], rawOptions[j]] = [rawOptions[j], rawOptions[i]];
     }
     setOptions(rawOptions);
     setSelectedOption(null);
+    setCorrectAnswer(null);
     setIsPaused(false);
   };
 
-  const handleOptionClick = (opt) => {
+  const handleOptionClick = async (opt) => {
     if (isPaused) return;
-    
+
     setIsPaused(true);
     setSelectedOption(opt);
-    
-    const isCorrect = opt === currentQuestion['Correct Answer'];
-    
+
+    let correct = null;
+    try {
+      correct = await fetchCorrectAnswer(currentQuestion.id);
+    } catch (error) {
+      console.error('Failed to fetch answer:', error);
+    }
+    setCorrectAnswer(correct);
+
+    const isCorrect = opt === correct;
+
     if (isCorrect) {
       playCorrect();
       setPracticeStreak(prev => prev + 1);
@@ -69,19 +85,26 @@ const PracticeScreen = ({ onExit }) => {
 
   const getOptionClass = (opt) => {
     if (!isPaused) return 'bg-white/10 hover:bg-white/20 border-white/20';
-    
-    if (opt === currentQuestion['Correct Answer']) {
+
+    if (!correctAnswer) {
+      if (opt === selectedOption) {
+        return 'bg-white/20 border-fifa-neon animate-pulse';
+      }
+      return 'bg-white/5 border-white/10 opacity-50';
+    }
+
+    if (opt === correctAnswer) {
       return 'bg-green-500 text-white border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]';
     }
-    
-    if (opt === selectedOption && opt !== currentQuestion['Correct Answer']) {
+
+    if (opt === selectedOption && opt !== correctAnswer) {
       return 'bg-red-500 text-white border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]';
     }
 
     return 'bg-white/5 border-white/10 opacity-50';
   };
 
-  if (loading) {
+  if (loading || !currentQuestion) {
     return (
       <div className="min-h-screen flex items-center justify-center text-fifa-neon font-bold">
         {t('Loading...')}
@@ -99,22 +122,22 @@ const PracticeScreen = ({ onExit }) => {
         Practice Mode - Unranked
       </div>
 
-      <button 
-        onClick={() => setShowQuitModal(true)} 
+      <button
+        onClick={() => setShowQuitModal(true)}
         className="absolute top-6 right-6 z-20 text-gray-400 hover:text-white transition-colors p-2"
       >
-        <X className="w-6 h-6" /> 
+        <X className="w-6 h-6" />
       </button>
 
       <div className="w-full max-w-md z-10 flex flex-col h-full mt-20">
-        
+
         <div className="flex justify-between items-center mb-8">
           <div className="bg-white/10 px-4 py-2 rounded-full backdrop-blur-md">
              <span className="text-gray-300 font-bold text-sm uppercase tracking-wider">
-              {currentQuestion.Category}
+              {currentQuestion.category}
             </span>
           </div>
-          
+
           {practiceStreak > 0 && (
              <div className={`px-4 py-2 rounded-full font-black flex items-center ${practiceStreak >= 5 ? 'bg-orange-500 text-white animate-pulse' : 'bg-white/10 text-orange-400'}`}>
                🔥 Streak: {practiceStreak}
@@ -125,7 +148,7 @@ const PracticeScreen = ({ onExit }) => {
         <div className="flex-grow flex flex-col justify-center">
           <div className="mb-6">
             <h2 className="text-3xl font-black text-white leading-tight">
-              {currentQuestion.Question}
+              {currentQuestion.text}
             </h2>
           </div>
 
@@ -145,7 +168,7 @@ const PracticeScreen = ({ onExit }) => {
       </div>
 
       {showQuitModal && (
-        <QuitModal 
+        <QuitModal
           isPractice={true}
           onConfirm={onExit}
           onCancel={() => setShowQuitModal(false)}
