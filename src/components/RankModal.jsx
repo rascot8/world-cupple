@@ -41,11 +41,11 @@ const RankModal = ({ onClose }) => {
               Every day, you play a 10-question match. Your score strictly dictates how many Football Points (FP) you gain or lose. You cannot drop below 0 FP.
             </p>
             <div className="grid grid-cols-2 gap-2 text-sm font-bold">
-              <div className="bg-fifa-green/10 text-fifa-neon p-2 rounded-lg text-center">10/10: +50 FP</div>
-              <div className="bg-fifa-green/10 text-fifa-neon p-2 rounded-lg text-center">9/10: +40 FP</div>
-              <div className="bg-fifa-green/10 text-fifa-neon p-2 rounded-lg text-center">8/10: +30 FP</div>
-              <div className="bg-fifa-green/10 text-fifa-neon p-2 rounded-lg text-center">7/10: +20 FP</div>
-              <div className="bg-fifa-green/10 text-fifa-neon p-2 rounded-lg text-center">6/10: +10 FP</div>
+              <div className="bg-white/5 text-gold-glow p-2 rounded-lg text-center font-bold border border-white/10">10/10: +50 FP</div>
+              <div className="bg-white/5 text-gold-glow p-2 rounded-lg text-center font-bold border border-white/10">9/10: +40 FP</div>
+              <div className="bg-white/5 text-gold-glow p-2 rounded-lg text-center font-bold border border-white/10">8/10: +30 FP</div>
+              <div className="bg-white/5 text-gold-glow p-2 rounded-lg text-center font-bold border border-white/10">7/10: +20 FP</div>
+              <div className="bg-white/5 text-gold-glow p-2 rounded-lg text-center font-bold border border-white/10">6/10: +10 FP</div>
               <div className="bg-white/10 text-gray-300 p-2 rounded-lg text-center">5/10: 0 FP</div>
               <div className="bg-red-500/10 text-red-400 p-2 rounded-lg text-center">4/10: -10 FP</div>
               <div className="bg-red-500/10 text-red-400 p-2 rounded-lg text-center">3/10: -20 FP</div>

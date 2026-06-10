@@ -42,6 +42,8 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
 
   const handleTimeOut = () => {
     setIsPaused(true);
+    playWrong();
+    setStreak(0);
     setTimeout(() => {
       onAnswer(false);
     }, 2000);
@@ -57,14 +59,20 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
     
     if (isCorrect) {
       playCorrect();
-      setStreak(prev => prev + 1);
+      setStreak(prev => {
+        const newStreak = prev + 1;
+        if (newStreak >= 7) {
+          window.dispatchEvent(new CustomEvent('streak-fire', { detail: { streak: newStreak } }));
+        }
+        return newStreak;
+      });
     } else {
       playWrong();
       setStreak(0);
     }
     
     setTimeout(() => {
-      onAnswer(isCorrect);
+      onAnswer(isCorrect, { fastAnswer: timeLeft >= 12 });
     }, 2000);
   };
 
@@ -105,8 +113,16 @@ const GameScreen = ({ question, currentIndex, total, onAnswer, onForfeit, t }) =
               </span>
             </div>
             {streak > 0 && (
-              <div className={`px-4 py-2 rounded-full font-black flex items-center ${streak >= 3 ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.6)]' : 'bg-white/10 text-orange-400'}`}>
-                🔥 Streak: {streak}
+              <div 
+                className={`px-4 py-2 rounded-full font-black flex items-center transition-all duration-300 ${
+                  streak >= 7 
+                    ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white animate-shake-fire scale-125 shadow-[0_0_30px_rgba(239,68,68,0.8)] ml-4 border-2 border-yellow-300' 
+                    : streak >= 3 
+                      ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.6)]' 
+                      : 'bg-white/10 text-orange-400'
+                }`}
+              >
+                🔥 {streak >= 7 ? 'ON FIRE!' : 'Streak:'} {streak}
               </div>
             )}
           </div>

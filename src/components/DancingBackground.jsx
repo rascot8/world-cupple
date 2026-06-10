@@ -64,7 +64,7 @@ const DancingBackground = () => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: false }); 
     
-    const CLUSTER_COUNT = 18; // Max 18 clusters * ~3 colors = ~54 particles
+    const CLUSTER_COUNT = 10; // Reduced to 10 for max performance on any device
     const clusters = [];
     
     const initCanvas = () => {
@@ -103,6 +103,38 @@ const DancingBackground = () => {
         clusters.push(createCluster());
       }
     };
+
+    let sparkParticles = [];
+    const createSparks = (streakCount) => {
+      const sparks = [];
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      
+      // Scale up the explosion based on the streak (Streak 7 = Level 1, Streak 10 = Level 4)
+      const intensityLevel = Math.min(Math.max(streakCount - 6, 1), 4);
+      const sparkAmount = 15 * intensityLevel;
+      const velocityMultiplier = 1 + (intensityLevel * 0.25);
+      const fadeRate = 0.04 - (intensityLevel * 0.005); // Fade slower as streak gets higher
+
+      for (let i = 0; i < sparkAmount; i++) {
+        sparks.push({
+          x: cx,
+          y: cy,
+          vx: (Math.random() - 0.5) * 12 * velocityMultiplier,
+          vy: (Math.random() - 0.5) * 12 * velocityMultiplier,
+          life: 1.0,
+          fadeRate: fadeRate,
+          color: Math.random() > 0.5 ? '#FFA500' : '#FF4500'
+        });
+      }
+      sparkParticles.push(...sparks);
+    };
+
+    const handleStreakFire = (e) => {
+      const currentStreak = e.detail?.streak || 7;
+      createSparks(currentStreak);
+    };
+    window.addEventListener('streak-fire', handleStreakFire);
 
     initCanvas();
     initParticles();
@@ -228,19 +260,53 @@ const DancingBackground = () => {
           const finalX = cluster.x + p.offsetX + globalShakeX + currentSway;
           const finalY = cluster.y + p.offsetY + globalShakeY;
 
+          // FAST PULSING GLOW: Reacts to music intensity but uses flat geometry (10x faster than shadowBlur)
+          ctx.beginPath();
+          ctx.arc(finalX, finalY, particleRadius * (2.5 + totalIntensity * 2.5), 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = Math.min(1, particleOpacity * (0.15 + totalIntensity * 0.3)); 
+          ctx.fill();
+          ctx.closePath();
+
+          // CORE PARTICLE
           ctx.beginPath();
           ctx.arc(finalX, finalY, particleRadius, 0, Math.PI * 2);
-          
           ctx.fillStyle = p.color;
           ctx.globalAlpha = particleOpacity;
-          
-          ctx.shadowBlur = 5 + (totalIntensity * 40);
-          ctx.shadowColor = p.color;
-          
           ctx.fill();
           ctx.closePath();
         });
       });
+
+      // Render sparks (optimized)
+      if (sparkParticles.length > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        sparkParticles.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= p.fadeRate;
+
+          if (p.life <= 0) return;
+
+          // Fast glow for sparks
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.life * 8, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.life * 0.3;
+          ctx.fill();
+          ctx.closePath();
+
+          // Core spark
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.life * 3, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.globalAlpha = p.life;
+          ctx.fill();
+          ctx.closePath();
+        });
+        ctx.globalCompositeOperation = 'source-over';
+        sparkParticles = sparkParticles.filter(p => p.life > 0);
+      }
       
       // Reset global states
       ctx.globalAlpha = 1.0;
@@ -253,6 +319,7 @@ const DancingBackground = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('streak-fire', handleStreakFire);
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
   }, [getAudioData]);

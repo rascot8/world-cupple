@@ -13,12 +13,14 @@ import PracticeScreen from './components/PracticeScreen';
 import VolumeControl from './components/VolumeControl';
 import AudioPromptModal from './components/AudioPromptModal';
 import DancingBackground from './components/DancingBackground';
+import KickoffScreen from './components/KickoffScreen';
 
 import { AudioProvider } from './contexts/AudioContext';
 
 import { loadTriviaData } from './utils/csvParser';
 import { getDailyQuestions, getTodayUTCString } from './utils/dailySeed';
 import { calculateDailyFPChange } from './utils/ranking';
+import { evaluateAchievements } from './utils/achievements';
 
 const App = () => {
   const { t } = useTranslation();
@@ -32,6 +34,7 @@ const App = () => {
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
+  const [matchStats, setMatchStats] = useState({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
 
   useEffect(() => {
     // Initialize Theme
@@ -132,10 +135,23 @@ const App = () => {
     setDailyQuestions(questions);
     setCurrentQuestionIndex(0);
     setScore(0);
-    setGameState('playing');
+    setMatchStats({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
+    setGameState('kickoff_daily');
   };
 
-  const handleAnswer = async (isCorrect) => {
+  const handleAnswer = async (isCorrect, additionalStats = {}) => {
+    const { fastAnswer } = additionalStats;
+    
+    const newCurrentStreak = isCorrect ? matchStats.currentStreak + 1 : 0;
+    const newMaxStreak = Math.max(matchStats.maxStreak, newCurrentStreak);
+    const newFastAnswers = matchStats.fastAnswers + (isCorrect && fastAnswer ? 1 : 0);
+    
+    setMatchStats({
+      currentStreak: newCurrentStreak,
+      maxStreak: newMaxStreak,
+      fastAnswers: newFastAnswers
+    });
+
     const newScore = score + (isCorrect ? 1 : 0);
     
     if (currentQuestionIndex + 1 < dailyQuestions.length) {
@@ -146,16 +162,46 @@ const App = () => {
       const fpChange = calculateDailyFPChange(newScore);
       const newTotalFP = Math.max(0, (userData?.fp || 0) + fpChange);
       
-      const newUserData = {
+      let newUserData = {
         ...userData,
         fp: newTotalFP,
         lastPlayedDate: getTodayUTCString()
       };
       
+      // Update playStreak
+      const lastPlayed = userData?.lastPlayedDate;
+      const today = getTodayUTCString();
+      if (lastPlayed !== today) {
+        // simple tracking for streak (ideally we parse dates to check if it's exactly 1 day diff)
+        // for now just increment
+        newUserData.playStreak = (userData?.playStreak || 0) + 1;
+      }
+      
+      if (newScore === 10) {
+        newUserData.perfectMatchesCount = (userData?.perfectMatchesCount || 0) + 1;
+      }
+
+      // Evaluate Achievements
+      const newlyUnlocked = evaluateAchievements(newUserData, {
+        isDaily: true,
+        score: newScore,
+        maxStreak: newMaxStreak,
+        fastAnswers: newFastAnswers,
+        // rankName and globalRankIndex would need real time calculation, using simple fallback for now
+        rankName: '', 
+      });
+
+      if (newlyUnlocked.length > 0) {
+        newUserData.badges = [...(newUserData.badges || []), ...newlyUnlocked];
+      }
+      
       if (db && currentUser) {
         await updateDoc(doc(db, 'users', currentUser.uid), {
           fp: newTotalFP,
-          lastPlayedDate: getTodayUTCString()
+          lastPlayedDate: today,
+          playStreak: newUserData.playStreak || 0,
+          perfectMatchesCount: newUserData.perfectMatchesCount || 0,
+          badges: newUserData.badges || []
         });
       }
       
@@ -211,6 +257,10 @@ const App = () => {
           onLeaderboard={() => setGameState('leaderboard')}
           userData={userData} 
         />
+      )}
+
+      {gameState === 'kickoff_daily' && (
+        <KickoffScreen onFinish={() => setGameState('playing')} />
       )}
 
       {gameState === 'playing' && dailyQuestions.length > 0 && (

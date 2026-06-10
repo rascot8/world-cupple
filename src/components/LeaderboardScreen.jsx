@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { collection, query, orderBy, limit, getDocs, getCountFromServer, where, documentId } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, getCountFromServer, where, documentId, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { getRankForFP } from '../utils/ranking';
 import { getFlagForCountry } from '../utils/countries';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, ChevronUp, ChevronDown, Minus } from 'lucide-react';
+import { getTodayUTCString } from '../utils/dailySeed';
 import BrandHeader from './BrandHeader';
 
 const LeaderboardScreen = ({ onBack, userData }) => {
@@ -49,11 +50,32 @@ const LeaderboardScreen = ({ onBack, userData }) => {
 
         if (q) {
           const snapshot = await getDocs(q);
-          let users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          // Sort friends client-side since 'in' query doesn't guarantee order with orderBy on another field in some indexes without creating composite index
+          let users = snapshot.docs.map((docSnap, i) => ({ id: docSnap.id, ...docSnap.data() }));
+          
           if (tab === 'friends') {
             users.sort((a, b) => (b.fp || 0) - (a.fp || 0));
+          } else if (tab === 'global') {
+            // Daily Reset Logic
+            const metaRef = doc(db, 'meta', 'leaderboard');
+            const metaSnap = await getDoc(metaRef);
+            const today = getTodayUTCString();
+            
+            if (!metaSnap.exists() || metaSnap.data().lastResetDate !== today) {
+              const batch = writeBatch(db);
+              
+              // Update all current top 50
+              users.forEach((u, index) => {
+                const userRef = doc(db, 'users', u.id);
+                batch.update(userRef, { startOfDayRank: index + 1 });
+                // Update local state to reflect change immediately
+                u.startOfDayRank = index + 1;
+              });
+              
+              batch.set(metaRef, { lastResetDate: today }, { merge: true });
+              await batch.commit();
+            }
           }
+          
           setTopUsers(users);
         } else {
           setTopUsers([]);
@@ -115,16 +137,40 @@ const LeaderboardScreen = ({ onBack, userData }) => {
             topUsers.map((u, index) => {
               const rank = getRankForFP(u.fp);
               const isMe = u.id === auth?.currentUser?.uid;
+              const currentRank = index + 1;
+              const startRank = u.startOfDayRank || currentRank;
+              const spotsMoved = startRank - currentRank;
+
               return (
                 <div key={u.id} className={`flex items-center p-4 rounded-xl border ${isMe ? 'bg-fifa-green/10 border-fifa-green' : 'bg-white/5 border-white/10'}`}>
-                  <div className="w-8 font-black text-xl text-gray-500 mr-2 text-center">#{index + 1}</div>
+                  <div className="w-8 font-bold text-lg text-gray-500 mr-2 text-center">#{currentRank}</div>
+                  
+                  <div className="w-10 flex flex-col items-center justify-center mr-2">
+                    {spotsMoved > 0 ? (
+                      <div className="flex flex-col items-center text-fifa-neon">
+                        <ChevronUp className="w-4 h-4" />
+                        <span className="text-[10px] font-bold">+{spotsMoved}</span>
+                      </div>
+                    ) : spotsMoved < 0 ? (
+                      <div className="flex flex-col items-center text-red-500">
+                        <ChevronDown className="w-4 h-4" />
+                        <span className="text-[10px] font-bold">{spotsMoved}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-gray-500">
+                        <Minus className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="text-2xl mr-3">{getFlagForCountry(u.country)}</div>
                   <div className="flex-grow min-w-0">
-                    <p className="font-bold text-white truncate">{u.username || u.email?.split('@')[0] || 'Player'}</p>
-                    <p className={`text-[10px] uppercase font-bold tracking-wider ${rank.color}`}>{rank.name}</p>
+                    <p className="font-semibold text-white truncate tracking-wide">{u.username || u.email?.split('@')[0] || 'Player'}</p>
+                    <p className={`text-[10px] uppercase font-bold tracking-widest ${rank.color}`}>{rank.name}</p>
                   </div>
-                  <div className="font-black text-xl text-fifa-neon tabular-nums pl-2">
-                    {u.fp} <span className="text-[10px] text-gray-400">FP</span>
+                  <div className="text-right pl-2 whitespace-nowrap">
+                    <span className="font-black text-lg text-gold-glow tabular-nums">{u.fp}</span>
+                    <span className="font-bold text-xs text-gray-400 ml-1">FP</span>
                   </div>
                 </div>
               );

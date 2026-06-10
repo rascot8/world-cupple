@@ -4,18 +4,21 @@ import { getTodayUTCString } from '../utils/dailySeed';
 import { getRankForFP } from '../utils/ranking';
 import { auth, db } from '../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Trophy, Settings, BarChart2, Info, Share2, Target } from 'lucide-react';
+import { Trophy, Settings, BarChart2, Info, Share2, Target, Award } from 'lucide-react';
 import { COUNTRIES, getFlagForCountry } from '../utils/countries';
 import RankModal from './RankModal';
 import SettingsModal from './SettingsModal';
+import TrophyCabinetModal from './TrophyCabinetModal';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
+import { seedFakeUsers } from '../utils/seedFakeUsers';
 
 const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState('');
   const [showRankModal, setShowRankModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showTrophyCabinet, setShowTrophyCabinet] = useState(false);
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [copied, setCopied] = useState(false);
@@ -31,6 +34,12 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
       setShowCountrySelect(false);
     }
   }, [userData]);
+
+  useEffect(() => {
+    if (!localStorage.getItem('hasSeededFakeUsers')) {
+      seedFakeUsers();
+    }
+  }, []);
 
   useEffect(() => {
     if (hasPlayedToday) {
@@ -73,6 +82,9 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
 
       
       <div className="absolute top-6 right-6 flex space-x-4">
+        <button onClick={() => setShowTrophyCabinet(true)} className="text-white hover:text-fifa-neon transition-colors">
+          <Award className="w-6 h-6" />
+        </button>
         <button onClick={() => setShowRankModal(true)} className="text-gray-400 hover:text-white transition-colors">
           <Info className="w-6 h-6" />
         </button>
@@ -103,7 +115,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
 
         <div className="glass-panel p-8 w-full text-center mb-6">
           <p className="text-gray-400 uppercase tracking-widest text-xs font-bold mb-1">{t('Football Points')}</p>
-          <h2 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fifa-green to-fifa-neon">
+          <h2 className="text-6xl font-black text-gold-glow">
             {userData?.fp || 0}
           </h2>
         </div>
@@ -142,6 +154,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
 
       {showRankModal && <RankModal onClose={() => setShowRankModal(false)} />}
       {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} userData={userData} />}
+      {showTrophyCabinet && <TrophyCabinetModal onClose={() => setShowTrophyCabinet(false)} userData={userData} />}
 
       {showCountrySelect && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
