@@ -13,12 +13,12 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
   const [showRankModal, setShowRankModal] = useState(false);
   const [animatedWidth, setAnimatedWidth] = useState(0);
   const [showFloatingText, setShowFloatingText] = useState(false);
-  const [animatedDailyFP, setAnimatedDailyFP] = useState(0);
-  const [animatedTotalFP, setAnimatedTotalFP] = useState(0);
-  
   const fpChange = calculateDailyFPChange(score);
   const newRank = getRankForFP(totalFP);
   const previousFP = totalFP - fpChange;
+  
+  const [animatedDailyFP, setAnimatedDailyFP] = useState(0);
+  const [animatedTotalFP, setAnimatedTotalFP] = useState(previousFP);
   
   const minFP = newRank.min;
   const maxFP = newRank.max === Infinity ? newRank.min + 1000 : newRank.max;
@@ -49,7 +49,7 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
         const easeOut = 1 - Math.pow(1 - progress, 3);
         
         setAnimatedDailyFP(Math.round(fpChange * easeOut));
-        setAnimatedTotalFP(Math.round(totalFP * easeOut));
+        setAnimatedTotalFP(Math.round(previousFP + (fpChange * easeOut)));
         
         if (progress < 1) {
           window.requestAnimationFrame(step);
@@ -100,20 +100,24 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
           </span>
         </div>
 
-        <div className="w-full mt-8 mb-8 relative px-4">
-          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 font-black text-xl z-20 transition-all duration-1000 ease-out pointer-events-none ${showFloatingText ? `translate-y-[16px] opacity-100 ${fpChange > 0 ? 'text-fifa-neon' : 'text-red-500'}` : '-translate-y-[20px] opacity-0'}`}>
-            {fpChange > 0 ? '+' : ''}{fpChange} FP
+        <div className="w-full mt-4 mb-8 relative px-4">
+          <div className="flex flex-col items-center justify-center mb-4">
+            <span className="text-6xl font-black text-gold-glow tabular-nums">{animatedTotalFP}</span>
           </div>
-          
+
           <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden border border-white/5 relative z-10">
             <div 
               className={`h-full transition-all duration-[1500ms] ease-out rounded-full ${fpChange > 0 ? 'bg-gradient-to-r from-fifa-green to-fifa-neon animate-pulse-glow-green' : 'bg-red-500 animate-pulse-glow-red'}`}
               style={{ width: `${animatedWidth}%` }}
             ></div>
           </div>
-          <div className="flex justify-between mt-2 text-[10px] text-gray-500 font-bold tracking-widest uppercase">
+          <div className="flex justify-between mt-2 text-[10px] text-gray-500 font-bold tracking-widest uppercase relative">
             <span>{minFP} FP</span>
             <span>{maxFP === Infinity ? 'MAX' : `${maxFP} FP`}</span>
+            
+            <div className={`absolute top-1 left-1/2 -translate-x-1/2 font-black text-2xl z-20 transition-all duration-1000 ease-out pointer-events-none ${showFloatingText ? `translate-y-0 opacity-100 ${fpChange > 0 ? 'text-gold-glow' : 'text-red-500'}` : 'translate-y-[40px] opacity-0'}`}>
+              {fpChange > 0 ? '+' : ''}{fpChange} FP
+            </div>
           </div>
         </div>
 
@@ -134,14 +138,14 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
           <div className="flex justify-between items-center px-4">
             <div className="text-left">
               <p className="text-gray-400 uppercase tracking-widest text-[10px] font-bold mb-1">Daily +/-</p>
-              <p className={`text-2xl font-black ${animatedDailyFP >= 0 ? 'text-fifa-neon' : 'text-red-500'}`}>
+              <p className={`text-2xl font-black ${animatedDailyFP >= 0 ? 'text-gold-glow' : 'text-red-500'}`}>
                 {animatedDailyFP > 0 ? '+' : ''}{animatedDailyFP} FP
               </p>
             </div>
             <div className="text-right">
-              <p className="text-gray-400 uppercase tracking-widest text-[10px] font-bold mb-1">Total FP</p>
-              <p className="text-3xl font-black bg-gradient-to-b from-[#FFF700] to-[#FFD700] text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]">
-                {animatedTotalFP} FP
+              <p className="text-gray-400 uppercase tracking-widest text-[10px] font-bold mb-1">Rank</p>
+              <p className={`text-xl font-black uppercase tracking-wider ${newRank.color}`}>
+                {newRank.name}
               </p>
             </div>
           </div>

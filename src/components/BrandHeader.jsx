@@ -1,7 +1,7 @@
 import React from 'react';
 
 const BrandHeader = ({ isHero = false }) => {
-  const gradientClasses = "text-transparent bg-clip-text bg-gradient-to-r from-[#FF004D] via-[#00F0FF] to-[#FAFF00] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]";
+  const gradientClasses = "text-transparent bg-clip-text bg-gradient-to-b from-[#FFF700] via-[#DAA520] to-[#B8860B] drop-shadow-[0_0_10px_rgba(218,165,32,0.6)]";
   
   if (isHero) {
     return (

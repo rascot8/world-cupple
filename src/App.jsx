@@ -13,12 +13,14 @@ import PracticeScreen from './components/PracticeScreen';
 import VolumeControl from './components/VolumeControl';
 import AudioPromptModal from './components/AudioPromptModal';
 import DancingBackground from './components/DancingBackground';
+import KickoffScreen from './components/KickoffScreen';
 
 import { AudioProvider } from './contexts/AudioContext';
 
 import { getTodayUTCString } from './utils/dailySeed';
 import { fetchTodayQuiz, fetchQuestion, fetchCorrectAnswer, fetchTodaySubmissions, submitDailyAnswer } from './utils/quizService';
 import { calculateDailyFPChange } from './utils/ranking';
+import { evaluateAchievements } from './utils/achievements';
 
 const App = () => {
   const { t } = useTranslation();
@@ -33,6 +35,7 @@ const App = () => {
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
+  const [matchStats, setMatchStats] = useState({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
 
   useEffect(() => {
     // Initialize Theme
@@ -121,18 +124,19 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
-  // Load the current question whenever the quiz position changes
+  // Load the current question whenever the quiz position changes.
+  // Starts during the kickoff screen so the first question is prefetched.
   useEffect(() => {
-    if (gameState !== 'playing' || !dailyQuiz) return;
+    if (!dailyQuiz) return;
     let cancelled = false;
     setCurrentQuestion(null);
     fetchQuestion(dailyQuiz.questionIds[currentQuestionIndex]).then((q) => {
       if (!cancelled) setCurrentQuestion(q);
     });
     return () => { cancelled = true; };
-  }, [gameState, dailyQuiz, currentQuestionIndex]);
+  }, [dailyQuiz, currentQuestionIndex]);
 
-  const finishQuiz = async (finalScore, quiz) => {
+  const finishQuiz = async (finalScore, quiz, stats = { maxStreak: 0, fastAnswers: 0 }) => {
     setScore(finalScore);
     const today = getTodayUTCString();
 
@@ -141,14 +145,44 @@ const App = () => {
       const fpChange = calculateDailyFPChange(finalScore);
       const newTotalFP = Math.max(0, (userData?.fp || 0) + fpChange);
 
+      let newUserData = {
+        ...userData,
+        fp: newTotalFP,
+        lastPlayedDate: today,
+        // simple tracking for streak (ideally we parse dates to check if it's exactly 1 day diff)
+        // for now just increment
+        playStreak: (userData?.playStreak || 0) + 1
+      };
+
+      if (finalScore === 10) {
+        newUserData.perfectMatchesCount = (userData?.perfectMatchesCount || 0) + 1;
+      }
+
+      // Evaluate Achievements
+      const newlyUnlocked = evaluateAchievements(newUserData, {
+        isDaily: true,
+        score: finalScore,
+        maxStreak: stats.maxStreak,
+        fastAnswers: stats.fastAnswers,
+        // rankName and globalRankIndex would need real time calculation, using simple fallback for now
+        rankName: '',
+      });
+
+      if (newlyUnlocked.length > 0) {
+        newUserData.badges = [...(newUserData.badges || []), ...newlyUnlocked];
+      }
+
       if (db && currentUser) {
         await updateDoc(doc(db, 'users', currentUser.uid), {
           fp: newTotalFP,
-          lastPlayedDate: today
+          lastPlayedDate: today,
+          playStreak: newUserData.playStreak || 0,
+          perfectMatchesCount: newUserData.perfectMatchesCount || 0,
+          badges: newUserData.badges || []
         });
       }
 
-      setUserData({ ...userData, fp: newTotalFP, lastPlayedDate: today });
+      setUserData(newUserData);
     }
 
     setDailyQuiz(quiz);
@@ -183,7 +217,8 @@ const App = () => {
       setDailyQuiz(quiz);
       setCurrentQuestionIndex(startIndex);
       setScore(startScore);
-      setGameState('playing');
+      setMatchStats({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
+      setGameState('kickoff_daily');
     } catch (error) {
       console.error("Failed to load daily quiz:", error);
       alert("Failed to load the daily quiz. Check your connection and try again.");
@@ -194,14 +229,26 @@ const App = () => {
   const handleSubmitAnswer = (questionId, choice) =>
     submitDailyAnswer(currentUser.uid, dailyQuiz.date, questionId, choice);
 
-  const handleAnswer = async (isCorrect) => {
+  const handleAnswer = async (isCorrect, additionalStats = {}) => {
+    const { fastAnswer } = additionalStats;
+
+    const newCurrentStreak = isCorrect ? matchStats.currentStreak + 1 : 0;
+    const newMaxStreak = Math.max(matchStats.maxStreak, newCurrentStreak);
+    const newFastAnswers = matchStats.fastAnswers + (isCorrect && fastAnswer ? 1 : 0);
+
+    setMatchStats({
+      currentStreak: newCurrentStreak,
+      maxStreak: newMaxStreak,
+      fastAnswers: newFastAnswers
+    });
+
     const newScore = score + (isCorrect ? 1 : 0);
 
     if (currentQuestionIndex + 1 < dailyQuiz.questionIds.length) {
       setScore(newScore);
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      await finishQuiz(newScore, dailyQuiz);
+      await finishQuiz(newScore, dailyQuiz, { maxStreak: newMaxStreak, fastAnswers: newFastAnswers });
     }
   };
 
@@ -233,6 +280,10 @@ const App = () => {
           onLeaderboard={() => setGameState('leaderboard')}
           userData={userData} 
         />
+      )}
+
+      {gameState === 'kickoff_daily' && (
+        <KickoffScreen onFinish={() => setGameState('playing')} />
       )}
 
       {gameState === 'playing' && dailyQuiz && (

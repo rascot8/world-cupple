@@ -72,7 +72,13 @@ const PracticeScreen = ({ onExit }) => {
 
     if (isCorrect) {
       playCorrect();
-      setPracticeStreak(prev => prev + 1);
+      setPracticeStreak(prev => {
+        const newStreak = prev + 1;
+        if (newStreak >= 7) {
+          window.dispatchEvent(new CustomEvent('streak-fire', { detail: { streak: newStreak } }));
+        }
+        return newStreak;
+      });
     } else {
       playWrong();
       setPracticeStreak(0);
@@ -107,7 +113,7 @@ const PracticeScreen = ({ onExit }) => {
   if (loading || !currentQuestion) {
     return (
       <div className="min-h-screen flex items-center justify-center text-fifa-neon font-bold">
-        {t('Loading...')}
+        Warming up...
       </div>
     );
   }
@@ -139,8 +145,16 @@ const PracticeScreen = ({ onExit }) => {
           </div>
 
           {practiceStreak > 0 && (
-             <div className={`px-4 py-2 rounded-full font-black flex items-center ${practiceStreak >= 5 ? 'bg-orange-500 text-white animate-pulse' : 'bg-white/10 text-orange-400'}`}>
-               🔥 Streak: {practiceStreak}
+             <div 
+               className={`px-4 py-2 rounded-full font-black flex items-center transition-all duration-300 ${
+                 practiceStreak >= 7 
+                   ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white animate-shake-fire scale-125 shadow-[0_0_30px_rgba(239,68,68,0.8)] ml-4 border-2 border-yellow-300' 
+                   : practiceStreak >= 5 
+                     ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.6)]' 
+                     : 'bg-white/10 text-orange-400'
+               }`}
+             >
+               🔥 {practiceStreak >= 7 ? 'ON FIRE!' : 'Streak:'} {practiceStreak}
              </div>
           )}
         </div>
