@@ -4,6 +4,7 @@ import { calculateDailyFPChange, getRankForFP } from '../utils/ranking';
 import { Trophy, Info } from 'lucide-react';
 import { getFlagForCountry } from '../utils/countries';
 import RankModal from './RankModal';
+import SharePromptModal from './SharePromptModal';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
 
@@ -11,6 +12,7 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
   const { t } = useTranslation();
   const { playGain, playLoss } = useAudio();
   const [showRankModal, setShowRankModal] = useState(false);
+  const [showSharePrompt, setShowSharePrompt] = useState(false);
   const [animatedWidth, setAnimatedWidth] = useState(0);
   const [showFloatingText, setShowFloatingText] = useState(false);
   const fpChange = calculateDailyFPChange(score);
@@ -60,6 +62,12 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
       };
       
       window.requestAnimationFrame(step);
+
+      // Show share prompt after animation finishes
+      setTimeout(() => {
+        // Only show if we didn't just open another modal like rank modal
+        setShowSharePrompt(true);
+      }, 1500);
 
     }, 500);
 
@@ -121,9 +129,9 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
           </div>
         </div>
 
-        <h1 className="text-5xl font-black text-white mb-2 uppercase tracking-tight mt-4">
+        <h2 className="text-2xl md:text-3xl font-black text-white/70 mb-2 uppercase tracking-widest mt-6">
           {getMessage()}
-        </h1>
+        </h2>
         
         <div className="glass-panel px-8 py-6 my-6 w-full flex flex-col gap-4">
           <div>
@@ -160,6 +168,7 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
       </div>
 
       {showRankModal && <RankModal onClose={() => setShowRankModal(false)} />}
+      {showSharePrompt && <SharePromptModal score={score} total={total} onClose={() => setShowSharePrompt(false)} />}
     </div>
   );
 };

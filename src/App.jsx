@@ -301,28 +301,34 @@ const App = () => {
     const goHome = () => { window.location.href = import.meta.env.BASE_URL; };
     if (!currentUser) {
       return (
-        <div className="min-h-screen text-white relative">
-          <DancingBackground />
-          <AuthScreen />
-        </div>
+        <AudioProvider gameState={gameState}>
+          <div className="min-h-screen text-white relative">
+            <DancingBackground />
+            <AuthScreen />
+          </div>
+        </AudioProvider>
       );
     }
     if (!userData?.isAdmin) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center text-center p-6">
-          <h1 className="text-3xl font-black uppercase tracking-widest text-red-400 mb-3">Access Denied</h1>
-          <p className="text-gray-400 mb-6">Your account is not an administrator.</p>
-          <button onClick={goHome} className="px-6 py-3 rounded-xl bg-white/10 border border-white/20 font-bold uppercase tracking-wider hover:bg-white/20 transition-colors">
-            Back to app
-          </button>
-        </div>
+        <AudioProvider gameState={gameState}>
+          <div className="min-h-screen flex flex-col items-center justify-center text-center p-6">
+            <h1 className="text-3xl font-black uppercase tracking-widest text-red-400 mb-3">Access Denied</h1>
+            <p className="text-gray-400 mb-6">Your account is not an administrator.</p>
+            <button onClick={goHome} className="px-6 py-3 rounded-xl bg-white/10 border border-white/20 font-bold uppercase tracking-wider hover:bg-white/20 transition-colors">
+              Back to app
+            </button>
+          </div>
+        </AudioProvider>
       );
     }
     return (
-      <div className="min-h-screen text-white relative">
-        <DancingBackground />
-        <AdminScreen onExit={goHome} />
-      </div>
+      <AudioProvider gameState={gameState}>
+        <div className="min-h-screen text-white relative">
+          <DancingBackground />
+          <AdminScreen onExit={goHome} />
+        </div>
+      </AudioProvider>
     );
   }
 

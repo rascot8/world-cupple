@@ -126,13 +126,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
           </h2>
         </div>
 
-        <button 
-          onClick={handleCopyInvite}
-          className="mb-8 flex items-center justify-center text-sm font-bold text-gray-400 hover:text-fifa-neon transition-colors"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          {copied ? "Link Copied!" : "Invite Friends"}
-        </button>
+
 
         {hasPlayedToday ? (
           <div className="w-full py-8 rounded-2xl bg-white/5 border border-white/10 text-center mb-4">
@@ -150,13 +144,20 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
 
         <button
           onClick={onPractice}
-          className="w-full py-4 mb-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold text-lg uppercase tracking-wider hover:bg-blue-500/20 transition-colors flex items-center justify-center"
+          className="w-full py-4 mb-8 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold text-lg uppercase tracking-wider hover:bg-blue-500/20 transition-colors flex items-center justify-center"
         >
           <Target className="w-5 h-5 mr-2" />
           Practice Arena
         </button>
 
         <MatchDayPicksSection />
+        <button 
+          onClick={handleCopyInvite}
+          className="flex items-center justify-center text-sm font-bold text-gray-400 hover:text-fifa-neon transition-colors"
+        >
+          <Share2 className="w-4 h-4 mr-2" />
+          {copied ? "Link Copied!" : "Invite Friends"}
+        </button>
 
       </div>
 
