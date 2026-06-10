@@ -2,47 +2,71 @@ rules_version = '2';
 
 // Deploy via Firebase console (Firestore > Rules) or `firebase deploy --only firestore:rules`.
 // Run scripts/migrateQuestions.mjs BEFORE deploying — these rules block client
-// writes to the content collections, so afterwards content is managed in the console.
+// writes to the content collections for everyone except admins, so afterwards
+// content is managed via the /admin UI (or the Firebase console).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
 
+    // True if the signed-in user's own doc has isAdmin == true.
+    // isAdmin can only be set from the Firebase console / Admin SDK (the users
+    // rules below forbid clients from changing their own isAdmin field), so it
+    // can't be self-granted.
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
     // Question text + options only. The correct answer is never stored here.
+    // Admins can edit questions via the /admin UI.
     match /questions/{questionId} {
       allow read: if signedIn();
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     // The correct answer is readable only when:
-    //  - the question belongs to the practice pool (unranked, learning is fine), or
-    //  - this user has already locked in a daily answer for it.
-    // This is the anti-cheat core: no client can see an answer before committing.
+    //  - the question belongs to the practice pool (unranked, learning is fine),
+    //  - this user has already locked in a daily answer for it, or
+    //  - the user is an admin (needs to review answers in the editor).
+    // This is the anti-cheat core: no normal client can see an answer before committing.
     match /questionAnswers/{questionId} {
       allow read: if signedIn() && (
         get(/databases/$(database)/documents/questions/$(questionId)).data.inPracticePool == true ||
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)/dailyAnswers/$(questionId))
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)/dailyAnswers/$(questionId)) ||
+        isAdmin()
       );
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
-    // Daily quizzes are defined ahead of time but stay invisible until their
-    // day arrives (availableAt) and they are published. Drafts stay hidden.
+    // Daily quizzes are defined ahead of time but stay invisible to players
+    // until their day arrives (availableAt) and they are published. Drafts stay
+    // hidden. Admins can read and write any quiz (including future drafts).
     match /dailyQuizzes/{quizDate} {
-      allow read: if signedIn()
+      allow read: if isAdmin() || (
+        signedIn()
         && resource.data.status == 'published'
-        && resource.data.availableAt <= request.time;
-      allow write: if false;
+        && resource.data.availableAt <= request.time
+      );
+      allow write: if isAdmin();
     }
 
     match /users/{userId} {
       // Open read: username availability is checked before sign-up, and the
       // leaderboard reads all user docs.
       allow read: if true;
-      allow create: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId
+        // A brand-new user can never sign themselves up as an admin.
+        && request.resource.data.get('isAdmin', false) == false;
       allow update: if signedIn() && (
-        request.auth.uid == userId ||
+        (
+          request.auth.uid == userId
+          // Users may edit their own doc, but NOT their admin status — that is
+          // controlled only from the Firebase console / Admin SDK.
+          && request.resource.data.get('isAdmin', false) == resource.data.get('isAdmin', false)
+        ) ||
         // Friend invites add the new friend to the inviter's doc — allow
         // other users to touch the friends field and nothing else.
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friends'])

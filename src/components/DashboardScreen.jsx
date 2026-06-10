@@ -4,7 +4,7 @@ import { getTodayUTCString } from '../utils/dailySeed';
 import { getRankForFP } from '../utils/ranking';
 import { auth, db } from '../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Trophy, Settings, BarChart2, Info, Share2, Target, Award } from 'lucide-react';
+import { Trophy, Settings, BarChart2, Info, Share2, Target, Award, Shield } from 'lucide-react';
 import { COUNTRIES, getFlagForCountry } from '../utils/countries';
 import RankModal from './RankModal';
 import SettingsModal from './SettingsModal';
@@ -82,6 +82,11 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
 
       
       <div className="absolute top-6 right-6 flex space-x-4">
+        {userData?.isAdmin && (
+          <button onClick={() => { window.location.href = '/admin'; }} title="Quiz Admin" className="text-fifa-neon hover:text-white transition-colors">
+            <Shield className="w-6 h-6" />
+          </button>
+        )}
         <button onClick={() => setShowTrophyCabinet(true)} className="text-white hover:text-fifa-neon transition-colors">
           <Award className="w-6 h-6" />
         </button>

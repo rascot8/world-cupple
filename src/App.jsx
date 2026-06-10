@@ -14,6 +14,7 @@ import VolumeControl from './components/VolumeControl';
 import AudioPromptModal from './components/AudioPromptModal';
 import DancingBackground from './components/DancingBackground';
 import KickoffScreen from './components/KickoffScreen';
+import AdminScreen from './components/AdminScreen';
 
 import { AudioProvider } from './contexts/AudioContext';
 
@@ -36,6 +37,10 @@ const App = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [matchStats, setMatchStats] = useState({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
+
+  // Simple path-based admin route. Players never reach it; access is also
+  // enforced server-side (only userData.isAdmin can read/write quiz content).
+  const isAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
 
   useEffect(() => {
     // Initialize Theme
@@ -260,6 +265,37 @@ const App = () => {
     return (
       <div className="min-h-screen flex items-center justify-center text-fifa-neon font-bold text-xl uppercase tracking-widest">
         LOADING...
+      </div>
+    );
+  }
+
+  // /admin route: must be signed in AND flagged isAdmin (also enforced by
+  // firestore.rules, so this is just the UX gate, not the security boundary).
+  if (isAdminRoute) {
+    const goHome = () => { window.location.href = '/'; };
+    if (!currentUser) {
+      return (
+        <div className="min-h-screen text-white relative">
+          <DancingBackground />
+          <AuthScreen />
+        </div>
+      );
+    }
+    if (!userData?.isAdmin) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center text-center p-6">
+          <h1 className="text-3xl font-black uppercase tracking-widest text-red-400 mb-3">Access Denied</h1>
+          <p className="text-gray-400 mb-6">Your account is not an administrator.</p>
+          <button onClick={goHome} className="px-6 py-3 rounded-xl bg-white/10 border border-white/20 font-bold uppercase tracking-wider hover:bg-white/20 transition-colors">
+            Back to app
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen text-white relative">
+        <DancingBackground />
+        <AdminScreen onExit={goHome} />
       </div>
     );
   }
