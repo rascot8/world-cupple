@@ -17,8 +17,8 @@ import KickoffScreen from './components/KickoffScreen';
 
 import { AudioProvider } from './contexts/AudioContext';
 
-import { loadTriviaData } from './utils/csvParser';
-import { getDailyQuestions, getTodayUTCString } from './utils/dailySeed';
+import { getTodayUTCString } from './utils/dailySeed';
+import { fetchTodayQuiz, fetchQuestion, fetchCorrectAnswer, fetchTodaySubmissions, submitDailyAnswer } from './utils/quizService';
 import { calculateDailyFPChange } from './utils/ranking';
 import { evaluateAchievements } from './utils/achievements';
 
@@ -30,8 +30,9 @@ const App = () => {
   const [authLoading, setAuthLoading] = useState(true);
 
   const [gameState, setGameState] = useState('auth'); // auth, dashboard, playing, results, leaderboard, practice
-  const [dailyQuestions, setDailyQuestions] = useState([]);
-  
+  const [dailyQuiz, setDailyQuiz] = useState(null); // { date, questionIds }
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [matchStats, setMatchStats] = useState({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
@@ -123,78 +124,54 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
-  const handlePlayDaily = async () => {
-    const data = await loadTriviaData();
-    const questions = getDailyQuestions(data);
-    
-    if (questions.length === 0) {
-      alert("Failed to load daily questions.");
-      return;
-    }
-    
-    setDailyQuestions(questions);
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setMatchStats({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
-    setGameState('kickoff_daily');
-  };
-
-  const handleAnswer = async (isCorrect, additionalStats = {}) => {
-    const { fastAnswer } = additionalStats;
-    
-    const newCurrentStreak = isCorrect ? matchStats.currentStreak + 1 : 0;
-    const newMaxStreak = Math.max(matchStats.maxStreak, newCurrentStreak);
-    const newFastAnswers = matchStats.fastAnswers + (isCorrect && fastAnswer ? 1 : 0);
-    
-    setMatchStats({
-      currentStreak: newCurrentStreak,
-      maxStreak: newMaxStreak,
-      fastAnswers: newFastAnswers
+  // Load the current question whenever the quiz position changes.
+  // Starts during the kickoff screen so the first question is prefetched.
+  useEffect(() => {
+    if (!dailyQuiz) return;
+    let cancelled = false;
+    setCurrentQuestion(null);
+    fetchQuestion(dailyQuiz.questionIds[currentQuestionIndex]).then((q) => {
+      if (!cancelled) setCurrentQuestion(q);
     });
+    return () => { cancelled = true; };
+  }, [dailyQuiz, currentQuestionIndex]);
 
-    const newScore = score + (isCorrect ? 1 : 0);
-    
-    if (currentQuestionIndex + 1 < dailyQuestions.length) {
-      setScore(newScore);
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      setScore(newScore);
-      const fpChange = calculateDailyFPChange(newScore);
+  const finishQuiz = async (finalScore, quiz, stats = { maxStreak: 0, fastAnswers: 0 }) => {
+    setScore(finalScore);
+    const today = getTodayUTCString();
+
+    // Don't award FP twice if the quiz was already completed today
+    if (userData?.lastPlayedDate !== today) {
+      const fpChange = calculateDailyFPChange(finalScore);
       const newTotalFP = Math.max(0, (userData?.fp || 0) + fpChange);
-      
+
       let newUserData = {
         ...userData,
         fp: newTotalFP,
-        lastPlayedDate: getTodayUTCString()
-      };
-      
-      // Update playStreak
-      const lastPlayed = userData?.lastPlayedDate;
-      const today = getTodayUTCString();
-      if (lastPlayed !== today) {
+        lastPlayedDate: today,
         // simple tracking for streak (ideally we parse dates to check if it's exactly 1 day diff)
         // for now just increment
-        newUserData.playStreak = (userData?.playStreak || 0) + 1;
-      }
-      
-      if (newScore === 10) {
+        playStreak: (userData?.playStreak || 0) + 1
+      };
+
+      if (finalScore === 10) {
         newUserData.perfectMatchesCount = (userData?.perfectMatchesCount || 0) + 1;
       }
 
       // Evaluate Achievements
       const newlyUnlocked = evaluateAchievements(newUserData, {
         isDaily: true,
-        score: newScore,
-        maxStreak: newMaxStreak,
-        fastAnswers: newFastAnswers,
+        score: finalScore,
+        maxStreak: stats.maxStreak,
+        fastAnswers: stats.fastAnswers,
         // rankName and globalRankIndex would need real time calculation, using simple fallback for now
-        rankName: '', 
+        rankName: '',
       });
 
       if (newlyUnlocked.length > 0) {
         newUserData.badges = [...(newUserData.badges || []), ...newlyUnlocked];
       }
-      
+
       if (db && currentUser) {
         await updateDoc(doc(db, 'users', currentUser.uid), {
           fp: newTotalFP,
@@ -204,33 +181,79 @@ const App = () => {
           badges: newUserData.badges || []
         });
       }
-      
+
       setUserData(newUserData);
-      setGameState('results');
+    }
+
+    setDailyQuiz(quiz);
+    setGameState('results');
+  };
+
+  const handlePlayDaily = async () => {
+    try {
+      const quiz = await fetchTodayQuiz();
+      if (!quiz) {
+        alert("No daily quiz is available today. Please try again later.");
+        return;
+      }
+
+      // Resume where the user left off — submitted answers are final, so a
+      // refresh can never be used to retry a question.
+      const submitted = await fetchTodaySubmissions(currentUser.uid, quiz.date);
+      let startIndex = 0;
+      let startScore = 0;
+      for (const qid of quiz.questionIds) {
+        if (!(qid in submitted)) break;
+        const correct = await fetchCorrectAnswer(qid);
+        if (submitted[qid] === correct) startScore++;
+        startIndex++;
+      }
+
+      if (startIndex >= quiz.questionIds.length) {
+        await finishQuiz(startScore, quiz);
+        return;
+      }
+
+      setDailyQuiz(quiz);
+      setCurrentQuestionIndex(startIndex);
+      setScore(startScore);
+      setMatchStats({ maxStreak: 0, currentStreak: 0, fastAnswers: 0 });
+      setGameState('kickoff_daily');
+    } catch (error) {
+      console.error("Failed to load daily quiz:", error);
+      alert("Failed to load the daily quiz. Check your connection and try again.");
+    }
+  };
+
+  // Lock in the answer in Firestore, then return the now-revealed correct answer
+  const handleSubmitAnswer = (questionId, choice) =>
+    submitDailyAnswer(currentUser.uid, dailyQuiz.date, questionId, choice);
+
+  const handleAnswer = async (isCorrect, additionalStats = {}) => {
+    const { fastAnswer } = additionalStats;
+
+    const newCurrentStreak = isCorrect ? matchStats.currentStreak + 1 : 0;
+    const newMaxStreak = Math.max(matchStats.maxStreak, newCurrentStreak);
+    const newFastAnswers = matchStats.fastAnswers + (isCorrect && fastAnswer ? 1 : 0);
+
+    setMatchStats({
+      currentStreak: newCurrentStreak,
+      maxStreak: newMaxStreak,
+      fastAnswers: newFastAnswers
+    });
+
+    const newScore = score + (isCorrect ? 1 : 0);
+
+    if (currentQuestionIndex + 1 < dailyQuiz.questionIds.length) {
+      setScore(newScore);
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      await finishQuiz(newScore, dailyQuiz, { maxStreak: newMaxStreak, fastAnswers: newFastAnswers });
     }
   };
 
   const handleForfeit = async () => {
-    const newScore = 0;
-    setScore(newScore);
-    const fpChange = calculateDailyFPChange(newScore);
-    const newTotalFP = Math.max(0, (userData?.fp || 0) + fpChange);
-    
-    const newUserData = {
-      ...userData,
-      fp: newTotalFP,
-      lastPlayedDate: getTodayUTCString()
-    };
-    
-    if (db && currentUser) {
-      await updateDoc(doc(db, 'users', currentUser.uid), {
-        fp: newTotalFP,
-        lastPlayedDate: getTodayUTCString()
-      });
-    }
-    
-    setUserData(newUserData);
-    setGameState('results');
+    await finishQuiz(0, dailyQuiz);
   };
 
   if (authLoading) {
@@ -263,15 +286,22 @@ const App = () => {
         <KickoffScreen onFinish={() => setGameState('playing')} />
       )}
 
-      {gameState === 'playing' && dailyQuestions.length > 0 && (
-        <GameScreen 
-          question={dailyQuestions[currentQuestionIndex]}
-          currentIndex={currentQuestionIndex}
-          total={dailyQuestions.length}
-          onAnswer={handleAnswer}
-          onForfeit={handleForfeit}
-          t={t}
-        />
+      {gameState === 'playing' && dailyQuiz && (
+        currentQuestion ? (
+          <GameScreen
+            question={currentQuestion}
+            currentIndex={currentQuestionIndex}
+            total={dailyQuiz.questionIds.length}
+            onSubmitAnswer={handleSubmitAnswer}
+            onAnswer={handleAnswer}
+            onForfeit={handleForfeit}
+            t={t}
+          />
+        ) : (
+          <div className="min-h-screen flex items-center justify-center text-fifa-neon font-bold text-xl uppercase tracking-widest">
+            LOADING...
+          </div>
+        )
       )}
 
       {gameState === 'practice' && (
@@ -279,9 +309,9 @@ const App = () => {
       )}
 
       {gameState === 'results' && (
-        <ResultsScreen 
+        <ResultsScreen
           score={score}
-          total={dailyQuestions.length}
+          total={dailyQuiz?.questionIds.length || 10}
           totalFP={userData?.fp || 0}
           userData={userData}
           onRestart={() => setGameState('dashboard')}
