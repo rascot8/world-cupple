@@ -1,21 +1,24 @@
 import React from 'react';
+import logo from '../assets/worldcupple.png';
 
 const BrandHeader = ({ isHero = false }) => {
-  const gradientClasses = "text-transparent bg-clip-text bg-gradient-to-b from-[#FFF700] via-[#DAA520] to-[#B8860B] drop-shadow-[0_0_10px_rgba(218,165,32,0.6)]";
-  
   if (isHero) {
     return (
-      <h1 className={`text-4xl md:text-5xl font-black uppercase tracking-tight text-center mb-10 ${gradientClasses} z-20`}>
-        TRIVIA WORLD CUP 2026
-      </h1>
+      <img
+        src={logo}
+        alt="Trivia World Cup 2026"
+        className="w-64 md:w-80 mx-auto mb-10 z-20"
+      />
     );
   }
 
   return (
     <div className="absolute top-6 left-6 z-40 pointer-events-none">
-      <h1 className={`text-sm md:text-base font-black uppercase tracking-widest ${gradientClasses}`}>
-        TRIVIA WORLD CUP 2026
-      </h1>
+      <img
+        src={logo}
+        alt="Trivia World Cup 2026"
+        className="w-24 md:w-32"
+      />
     </div>
   );
 };
