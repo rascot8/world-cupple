@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
 import GameScreen from './components/GameScreen';
+import MatchDayPickScreen from './components/MatchDayPickScreen';
 import ResultsScreen from './components/ResultsScreen';
 import LeaderboardScreen from './components/LeaderboardScreen';
 import PracticeScreen from './components/PracticeScreen';
@@ -20,6 +21,7 @@ import { AudioProvider } from './contexts/AudioContext';
 
 import { getTodayUTCString } from './utils/dailySeed';
 import { fetchTodayQuiz, fetchQuestion, fetchCorrectAnswer, fetchTodaySubmissions, submitDailyAnswer } from './utils/quizService';
+import { placePick } from './utils/picksService';
 import { calculateDailyFPChange } from './utils/ranking';
 import { evaluateAchievements } from './utils/achievements';
 
@@ -40,7 +42,8 @@ const App = () => {
 
   // Simple path-based admin route. Players never reach it; access is also
   // enforced server-side (only userData.isAdmin can read/write quiz content).
-  const isAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const isAdminRoute = window.location.pathname.replace(/\/$/, '') === `${basePath}/admin`;
 
   useEffect(() => {
     // Initialize Theme
@@ -209,8 +212,13 @@ const App = () => {
       let startScore = 0;
       for (const qid of quiz.questionIds) {
         if (!(qid in submitted)) break;
-        const correct = await fetchCorrectAnswer(qid);
-        if (submitted[qid] === correct) startScore++;
+        // Picks have their own RP economy and never count toward the quiz
+        // score — even once settled (which would otherwise leak an answer).
+        const q = await fetchQuestion(qid);
+        if (q?.type !== 'pick') {
+          const correct = await fetchCorrectAnswer(qid);
+          if (submitted[qid] === correct) startScore++;
+        }
         startIndex++;
       }
 
@@ -233,6 +241,24 @@ const App = () => {
   // Lock in the answer in Firestore, then return the now-revealed correct answer
   const handleSubmitAnswer = (questionId, choice) =>
     submitDailyAnswer(currentUser.uid, dailyQuiz.date, questionId, choice);
+
+  // Lock a Match Day Pick wager (escrow + odds snapshot happen server-side).
+  // Reflect the escrowed stake in the local balance right away.
+  const handlePlacePick = async (questionId, choice, stake) => {
+    const res = await placePick(dailyQuiz.date, questionId, choice, stake);
+    setUserData((prev) => ({ ...prev, fp: res.newBalance }));
+    return res;
+  };
+
+  // Advance past a pick without touching the quiz score — picks have their own
+  // RP economy and settle later. Finish the quiz if it was the last question.
+  const handlePickDone = async () => {
+    if (currentQuestionIndex + 1 < dailyQuiz.questionIds.length) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+    } else {
+      await finishQuiz(score, dailyQuiz, { maxStreak: matchStats.maxStreak, fastAnswers: matchStats.fastAnswers });
+    }
+  };
 
   const handleAnswer = async (isCorrect, additionalStats = {}) => {
     const { fastAnswer } = additionalStats;
@@ -272,7 +298,7 @@ const App = () => {
   // /admin route: must be signed in AND flagged isAdmin (also enforced by
   // firestore.rules, so this is just the UX gate, not the security boundary).
   if (isAdminRoute) {
-    const goHome = () => { window.location.href = '/'; };
+    const goHome = () => { window.location.href = import.meta.env.BASE_URL; };
     if (!currentUser) {
       return (
         <div className="min-h-screen text-white relative">
@@ -324,15 +350,28 @@ const App = () => {
 
       {gameState === 'playing' && dailyQuiz && (
         currentQuestion ? (
-          <GameScreen
-            question={currentQuestion}
-            currentIndex={currentQuestionIndex}
-            total={dailyQuiz.questionIds.length}
-            onSubmitAnswer={handleSubmitAnswer}
-            onAnswer={handleAnswer}
-            onForfeit={handleForfeit}
-            t={t}
-          />
+          currentQuestion.type === 'pick' ? (
+            <MatchDayPickScreen
+              question={currentQuestion}
+              balance={userData?.fp || 0}
+              onPlacePick={handlePlacePick}
+              onDone={handlePickDone}
+              onForfeit={handleForfeit}
+              currentIndex={currentQuestionIndex}
+              total={dailyQuiz.questionIds.length}
+              t={t}
+            />
+          ) : (
+            <GameScreen
+              question={currentQuestion}
+              currentIndex={currentQuestionIndex}
+              total={dailyQuiz.questionIds.length}
+              onSubmitAnswer={handleSubmitAnswer}
+              onAnswer={handleAnswer}
+              onForfeit={handleForfeit}
+              t={t}
+            />
+          )
         ) : (
           <div className="min-h-screen flex items-center justify-center text-fifa-neon font-bold text-xl uppercase tracking-widest">
             LOADING...

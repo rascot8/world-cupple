@@ -11,6 +11,7 @@ import SettingsModal from './SettingsModal';
 import TrophyCabinetModal from './TrophyCabinetModal';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
+import MatchDayPicksSection from './MatchDayPicksSection';
 import { seedFakeUsers } from '../utils/seedFakeUsers';
 
 const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
@@ -70,7 +71,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
 
   const handleCopyInvite = () => {
     if (auth.currentUser) {
-      const link = `${window.location.origin}/?invite=${auth.currentUser.uid}`;
+      const link = `${window.location.origin}${import.meta.env.BASE_URL}?invite=${auth.currentUser.uid}`;
       navigator.clipboard.writeText(link);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -83,7 +84,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
       
       <div className="absolute top-6 right-6 flex space-x-4">
         {userData?.isAdmin && (
-          <button onClick={() => { window.location.href = '/admin'; }} title="Quiz Admin" className="text-fifa-neon hover:text-white transition-colors">
+          <button onClick={() => { window.location.href = `${import.meta.env.BASE_URL}admin`; }} title="Quiz Admin" className="text-fifa-neon hover:text-white transition-colors">
             <Shield className="w-6 h-6" />
           </button>
         )}
@@ -147,13 +148,15 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
           </button>
         )}
 
-        <button 
+        <button
           onClick={onPractice}
-          className="w-full py-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold text-lg uppercase tracking-wider hover:bg-blue-500/20 transition-colors flex items-center justify-center"
+          className="w-full py-4 mb-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold text-lg uppercase tracking-wider hover:bg-blue-500/20 transition-colors flex items-center justify-center"
         >
           <Target className="w-5 h-5 mr-2" />
           Practice Arena
         </button>
+
+        <MatchDayPicksSection />
 
       </div>
 

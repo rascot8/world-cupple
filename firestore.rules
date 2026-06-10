@@ -76,14 +76,28 @@ service cloud.firestore {
       // questions that are part of an already-available quiz, and can never be
       // edited or deleted — so you can't peek at an answer and then change
       // your pick, and you can't unlock future quizzes' answers early.
+      //
+      // Match Day Picks (which carry a `stake`) are NEVER written from the
+      // client — the placePick Cloud Function escrows the stake and snapshots
+      // the odds server-side. Rejecting any client write that contains `stake`
+      // stops a player forging a wager they never paid for.
       match /dailyAnswers/{questionId} {
         allow read: if signedIn() && request.auth.uid == userId;
         allow create: if signedIn() && request.auth.uid == userId
           && request.resource.data.quizDate is string
           && request.resource.data.choice is string
+          && !('stake' in request.resource.data)
           && questionId in get(/databases/$(database)/documents/dailyQuizzes/$(request.resource.data.quizDate)).data.questionIds
           && get(/databases/$(database)/documents/dailyQuizzes/$(request.resource.data.quizDate)).data.availableAt <= request.time;
         allow update, delete: if false;
+      }
+
+      // Per-user outcome of a settled pick (win/loss/void + RP delta). Written
+      // only by the settlePick Cloud Function (Admin SDK); the player reads
+      // their own to show results on the dashboard.
+      match /pickSettlements/{questionId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow write: if false;
       }
     }
   }

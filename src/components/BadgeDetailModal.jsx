@@ -4,14 +4,14 @@ import { BADGES, TIERS } from '../utils/achievements';
 
 const BadgeDetailModal = ({ badge, isUnlocked, onClose }) => {
   const handleShare = async () => {
-    const text = `I just unlocked the "${badge.name}" badge in TRIVIA WORLD CUP 2026! Can you beat my rank? Play here: ${window.location.origin}`;
+    const text = `I just unlocked the "${badge.name}" badge in TRIVIA WORLD CUP 2026! Can you beat my rank? Play here: ${window.location.origin}${import.meta.env.BASE_URL}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'Trivia World Cup 2026',
           text: text,
-          url: window.location.origin,
+          url: `${window.location.origin}${import.meta.env.BASE_URL}`,
         });
       } catch (err) {
         console.log('Error sharing', err);

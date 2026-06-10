@@ -1,4 +1,4 @@
-import { db } from '../config/firebase';
+import { db, functions } from '../config/firebase';
 import {
   doc,
   getDoc,
@@ -12,6 +12,20 @@ import {
   writeBatch,
   Timestamp
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+
+// --- Match Day Pick helpers ---
+
+// Firestore Timestamp -> value for a <input type="datetime-local"> (local tz).
+const timestampToInputValue = (ts) => {
+  if (!ts) return '';
+  const date = ts.toDate ? ts.toDate() : new Date((ts.seconds || 0) * 1000);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+// datetime-local value (local tz) -> Firestore Timestamp.
+const inputValueToTimestamp = (value) => (value ? Timestamp.fromDate(new Date(value)) : null);
 
 /**
  * Admin-only data layer. Every write here is gated by firestore.rules
@@ -59,6 +73,7 @@ export const fetchQuizForEditing = async (date) => {
         getDoc(doc(db, 'questionAnswers', id))
       ]);
       const qData = qSnap.exists() ? qSnap.data() : { text: '', options: ['', '', ''] };
+      const isPick = qData.type === 'pick';
       return {
         id,
         text: qData.text || '',
@@ -66,7 +81,16 @@ export const fetchQuizForEditing = async (date) => {
         category: qData.category || '',
         difficulty: qData.difficulty || '',
         inPracticePool: qData.inPracticePool ?? false,
-        correctAnswer: aSnap.exists() ? aSnap.data().correctAnswer : ''
+        correctAnswer: aSnap.exists() ? aSnap.data().correctAnswer : '',
+        // Match Day Pick fields
+        type: qData.type || 'standard',
+        fixture: qData.fixture || '',
+        locksAt: timestampToInputValue(qData.locksAt),
+        odds: [qData.odds?.[0] ?? '', qData.odds?.[1] ?? '', qData.odds?.[2] ?? ''],
+        // For picks, the answer doc only exists once settled — surface the result.
+        settledResult: isPick && aSnap.exists()
+          ? (aSnap.data().void ? 'void' : aSnap.data().correctAnswer)
+          : null
       };
     })
   );
@@ -100,19 +124,32 @@ export const saveQuiz = async (date, { status, questions }) => {
 
   for (const q of questions) {
     const options = q.options.map((o) => (o || '').trim());
-    batch.set(doc(db, 'questions', q.id), {
+    const isPick = q.type === 'pick';
+    const questionDoc = {
       text: (q.text || '').trim(),
       options,
       category: (q.category || '').trim(),
       difficulty: (q.difficulty || '').trim(),
-      // Daily questions stay out of the practice pool so they can't be farmed
-      // for answers; preserve whatever the question already had otherwise.
-      inPracticePool: q.inPracticePool ?? false,
-      source: 'admin'
-    });
-    batch.set(doc(db, 'questionAnswers', q.id), {
-      correctAnswer: (q.correctAnswer || '').trim()
-    });
+      // Daily questions (and picks) stay out of the practice pool so they can't
+      // be farmed for answers; preserve whatever the question already had.
+      inPracticePool: isPick ? false : (q.inPracticePool ?? false),
+      source: 'admin',
+      type: isPick ? 'pick' : 'standard'
+    };
+    if (isPick) {
+      questionDoc.fixture = (q.fixture || '').trim();
+      questionDoc.locksAt = inputValueToTimestamp(q.locksAt);
+      questionDoc.odds = q.odds.map((o) => Number(o) || 0);
+    }
+    batch.set(doc(db, 'questions', q.id), questionDoc);
+
+    // Standard questions store their answer up front. Picks have no answer
+    // until the match is over — the settlePick Cloud Function writes it.
+    if (!isPick) {
+      batch.set(doc(db, 'questionAnswers', q.id), {
+        correctAnswer: (q.correctAnswer || '').trim()
+      });
+    }
   }
 
   batch.set(doc(db, 'dailyQuizzes', date), {
@@ -159,5 +196,29 @@ export const blankQuestion = () => ({
   difficulty: '',
   inPracticePool: false,
   correctAnswer: '',
+  type: 'standard',
+  fixture: '',
+  locksAt: '',
+  odds: ['', '', ''],
+  settledResult: null,
   isNew: true
 });
+
+// --- Match Day Pick settlement (admin-only Cloud Function) ---
+
+/**
+ * Settle a pick by naming the winning option. The Cloud Function fans out RP
+ * payouts to everyone who wagered. Returns { settled, skipped, total }.
+ */
+export const settlePickResult = async (questionId, winningOption) => {
+  const fn = httpsCallable(functions, 'settlePick');
+  return (await fn({ questionId, winningOption })).data;
+};
+
+/**
+ * Void a pick (match cancelled, player didn't play, etc). Refunds every stake.
+ */
+export const voidPickResult = async (questionId) => {
+  const fn = httpsCallable(functions, 'settlePick');
+  return (await fn({ questionId, voidPick: true })).data;
+};

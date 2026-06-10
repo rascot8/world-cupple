@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, ArrowLeft, Plus, Trash2, Search, X, Check, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Plus, Trash2, Search, X, Check, Loader2, Zap, Trophy, Ban } from 'lucide-react';
 import {
   fetchQuizzesInRange,
   fetchQuizForEditing,
   saveQuiz,
   createDraftQuiz,
   fetchAllQuestions,
-  blankQuestion
+  blankQuestion,
+  settlePickResult,
+  voidPickResult
 } from '../utils/adminService';
+import { impliedChance } from '../utils/picks';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const pad = (n) => String(n).padStart(2, '0');
@@ -18,7 +21,12 @@ const fmt = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
 const toEditable = (q) => ({
   ...q,
   options: [q.options?.[0] || '', q.options?.[1] || '', q.options?.[2] || ''],
-  correctIndex: Math.max(0, (q.options || []).indexOf(q.correctAnswer))
+  correctIndex: Math.max(0, (q.options || []).indexOf(q.correctAnswer)),
+  type: q.type || 'standard',
+  fixture: q.fixture || '',
+  locksAt: q.locksAt || '',
+  odds: [q.odds?.[0] ?? '', q.odds?.[1] ?? '', q.odds?.[2] ?? ''],
+  settledResult: q.settledResult ?? null
 });
 
 const AdminScreen = ({ onExit }) => {
@@ -36,6 +44,8 @@ const AdminScreen = ({ onExit }) => {
   const [allQuestions, setAllQuestions] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
+
+  const [settlingId, setSettlingId] = useState(null);
 
   const loadMonth = useCallback(async () => {
     const start = fmt(viewYear, viewMonth + 1, 1);
@@ -93,8 +103,40 @@ const AdminScreen = ({ onExit }) => {
       return { ...prev, questions };
     });
   };
+  const updateOdds = (idx, optIdx, value) => {
+    setEditing((prev) => {
+      const questions = prev.questions.map((q, i) => {
+        if (i !== idx) return q;
+        const odds = q.odds.map((o, oi) => (oi === optIdx ? value : o));
+        return { ...q, odds };
+      });
+      return { ...prev, questions };
+    });
+  };
+  const togglePick = (idx, isPick) =>
+    updateQuestion(idx, { type: isPick ? 'pick' : 'standard' });
+
   const removeQuestion = (idx) =>
     setEditing((prev) => ({ ...prev, questions: prev.questions.filter((_, i) => i !== idx) }));
+
+  // Settle (or void) a saved pick. The Cloud Function fans RP out to everyone
+  // who wagered; afterwards we reload so the settled state shows.
+  const handleSettle = async (questionId, winningOption) => {
+    setError('');
+    setSettlingId(questionId);
+    try {
+      const res = winningOption === '__void__'
+        ? await voidPickResult(questionId)
+        : await settlePickResult(questionId, winningOption);
+      await openDate(selectedDate);
+      alert(`Settled. ${res.settled} wager(s) paid out${res.skipped ? `, ${res.skipped} skipped` : ''}.`);
+    } catch (e) {
+      console.error(e);
+      setError(e?.message || 'Settlement failed. Are functions deployed and are you an admin?');
+    } finally {
+      setSettlingId(null);
+    }
+  };
 
   const addNewQuestion = () =>
     setEditing((prev) => ({ ...prev, questions: [...prev.questions, toEditable(blankQuestion())] }));
@@ -122,6 +164,11 @@ const AdminScreen = ({ onExit }) => {
       const q = editing.questions[i];
       if (!q.text.trim()) return setError(`Question ${i + 1} has no text.`);
       if (q.options.some((o) => !o.trim())) return setError(`Question ${i + 1} has an empty option.`);
+      if (q.type === 'pick') {
+        if (!q.fixture.trim()) return setError(`Pick ${i + 1} needs a fixture (e.g. "Arsenal vs Spurs").`);
+        if (!q.locksAt) return setError(`Pick ${i + 1} needs a lock time (kickoff).`);
+        if (q.odds.some((o) => !(Number(o) > 1))) return setError(`Pick ${i + 1} needs odds greater than 1 for every option.`);
+      }
     }
     const questions = editing.questions.map((q) => ({
       ...q,
@@ -297,27 +344,131 @@ const AdminScreen = ({ onExit }) => {
                         </button>
                       </div>
 
-                      <div className="space-y-2 pl-7">
-                        {q.options.map((opt, oi) => (
-                          <label key={oi} className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name={`correct-${q.id}`}
-                              checked={q.correctIndex === oi}
-                              onChange={() => updateQuestion(idx, { correctIndex: oi })}
-                              className="w-4 h-4 accent-fifa-green"
-                            />
-                            <input
-                              value={opt}
-                              onChange={(e) => updateOption(idx, oi, e.target.value)}
-                              placeholder={`Option ${oi + 1}`}
-                              className={`flex-grow p-2 rounded-lg bg-black/30 border text-sm focus:outline-none
-                                ${q.correctIndex === oi ? 'border-fifa-green/60 text-fifa-green' : 'border-white/10 text-white focus:border-fifa-green'}`}
-                            />
-                          </label>
-                        ))}
-                        <p className="text-[11px] text-gray-500 pt-1">Select the radio for the correct answer.</p>
+                      {/* Question type toggle: standard quiz answer vs Match Day Pick */}
+                      <div className="flex items-center gap-2 pl-7 mb-3">
+                        <button
+                          onClick={() => togglePick(idx, false)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors
+                            ${q.type !== 'pick' ? 'bg-fifa-green/20 text-fifa-green border border-fifa-green/40' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+                        >
+                          Standard
+                        </button>
+                        <button
+                          onClick={() => togglePick(idx, true)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center transition-colors
+                            ${q.type === 'pick' ? 'bg-fifa-neon/20 text-fifa-neon border border-fifa-neon/40' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+                        >
+                          <Zap className="w-3.5 h-3.5 mr-1.5" /> Match Day Pick
+                        </button>
                       </div>
+
+                      {q.type === 'pick' ? (
+                        <div className="space-y-3 pl-7">
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                              value={q.fixture}
+                              onChange={(e) => updateQuestion(idx, { fixture: e.target.value })}
+                              placeholder="Fixture, e.g. Arsenal vs Spurs"
+                              className="flex-1 p-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm focus:outline-none focus:border-fifa-neon"
+                            />
+                            <label className="flex items-center gap-2 text-xs text-gray-400 font-bold">
+                              <span className="whitespace-nowrap uppercase tracking-wider">Locks at</span>
+                              <input
+                                type="datetime-local"
+                                value={q.locksAt}
+                                onChange={(e) => updateQuestion(idx, { locksAt: e.target.value })}
+                                className="p-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm focus:outline-none focus:border-fifa-neon"
+                              />
+                            </label>
+                          </div>
+
+                          <div className="space-y-2">
+                            {q.options.map((opt, oi) => (
+                              <div key={oi} className="flex items-center gap-2">
+                                <input
+                                  value={opt}
+                                  onChange={(e) => updateOption(idx, oi, e.target.value)}
+                                  placeholder={`Outcome ${oi + 1}`}
+                                  className="flex-grow p-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm focus:outline-none focus:border-fifa-neon"
+                                />
+                                <input
+                                  type="number"
+                                  step="0.05"
+                                  min="1.01"
+                                  value={q.odds[oi]}
+                                  onChange={(e) => updateOdds(idx, oi, e.target.value)}
+                                  placeholder="Odds"
+                                  className="w-24 p-2 rounded-lg bg-black/30 border border-fifa-neon/30 text-fifa-neon text-sm text-center font-bold focus:outline-none focus:border-fifa-neon"
+                                />
+                                <span className="w-12 text-[11px] text-gray-500 text-right">
+                                  {Number(q.odds[oi]) > 1 ? impliedChance(q.odds[oi]) : ''}
+                                </span>
+                              </div>
+                            ))}
+                            <p className="text-[11px] text-gray-500 pt-1">
+                              Decimal odds. ×2.00 = even (win +1× stake), ×4.00 = win +3× stake. No answer is stored — you settle it after the match.
+                            </p>
+                          </div>
+
+                          {/* Settle panel — only for a pick already saved to Firestore */}
+                          {editing.exists && !q.isNew && (
+                            q.settledResult ? (
+                              <div className="flex items-center gap-2 p-3 rounded-xl bg-fifa-green/10 border border-fifa-green/30">
+                                <Trophy className="w-4 h-4 text-fifa-green" />
+                                <span className="text-sm font-bold text-fifa-green">
+                                  Settled · {q.settledResult === 'void' ? 'Voided (stakes refunded)' : `Winner: ${q.settledResult}`}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="p-3 rounded-xl bg-black/30 border border-white/10">
+                                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-2">Settle result (pays out RP)</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {q.options.filter((o) => o.trim()).map((opt) => (
+                                    <button
+                                      key={opt}
+                                      disabled={settlingId === q.id}
+                                      onClick={() => { if (window.confirm(`Settle "${q.fixture}" with winner: ${opt}? This pays out RP and cannot be undone.`)) handleSettle(q.id, opt); }}
+                                      className="px-3 py-1.5 rounded-lg bg-fifa-green/15 border border-fifa-green/40 text-fifa-green text-xs font-bold hover:bg-fifa-green/25 transition-colors disabled:opacity-50"
+                                    >
+                                      {opt} won
+                                    </button>
+                                  ))}
+                                  <button
+                                    disabled={settlingId === q.id}
+                                    onClick={() => { if (window.confirm(`Void "${q.fixture}"? Every stake is refunded.`)) handleSettle(q.id, '__void__'); }}
+                                    className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors flex items-center disabled:opacity-50"
+                                  >
+                                    <Ban className="w-3.5 h-3.5 mr-1.5" /> Void
+                                  </button>
+                                  {settlingId === q.id && <Loader2 className="w-4 h-4 animate-spin text-fifa-neon self-center" />}
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2 pl-7">
+                          {q.options.map((opt, oi) => (
+                            <label key={oi} className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                name={`correct-${q.id}`}
+                                checked={q.correctIndex === oi}
+                                onChange={() => updateQuestion(idx, { correctIndex: oi })}
+                                className="w-4 h-4 accent-fifa-green"
+                              />
+                              <input
+                                value={opt}
+                                onChange={(e) => updateOption(idx, oi, e.target.value)}
+                                placeholder={`Option ${oi + 1}`}
+                                className={`flex-grow p-2 rounded-lg bg-black/30 border text-sm focus:outline-none
+                                  ${q.correctIndex === oi ? 'border-fifa-green/60 text-fifa-green' : 'border-white/10 text-white focus:border-fifa-green'}`}
+                              />
+                            </label>
+                          ))}
+                          <p className="text-[11px] text-gray-500 pt-1">Select the radio for the correct answer.</p>
+                        </div>
+                      )}
 
                       <div className="flex gap-2 pl-7 mt-3">
                         <input

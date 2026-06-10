@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,15 +16,17 @@ const firebaseConfig = {
 let app;
 let auth;
 let db;
+let functions;
 let googleProvider;
 
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  functions = getFunctions(app);
   googleProvider = new GoogleAuthProvider();
 } catch (error) {
   console.error("Firebase initialization error (check your .env.local):", error);
 }
 
-export { auth, db, googleProvider };
+export { auth, db, functions, googleProvider };
