@@ -122,7 +122,7 @@ export const claimVipDailyPack = async (uid, userData) => {
     vipClaimedDate: today, 
     hints: (userData.hints || 0) + 1,
     extraTime: (userData.extraTime || 0) + 1,
-    secondChances: (userData.secondChances || 0) + 1
+    freeKicks: (userData.freeKicks || 0) + 1
   };
   await write(uid, partial);
   return partial;

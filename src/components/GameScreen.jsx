@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
 import { fetchCorrectAnswer } from '../utils/quizService';
-import { X, Tv, Lightbulb, Clock, Heart } from 'lucide-react';
+import { X, Tv, Search, Clock, Zap } from 'lucide-react';
 import QuitModal from './QuitModal';
 
 // question: { id, text, options } — the correct answer is NOT in this object.
@@ -13,7 +13,7 @@ import QuitModal from './QuitModal';
 // from the store; this is the mid-match monetization hook.
 const VAR_DECISION_SECONDS = 7;
 
-const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, hints = 0, extraTime = 0, secondChances = 0, onUseConsumable, onOverrideAnswer, t, currentStreak = 0 }) => {
+const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, hints = 0, extraTime = 0, freeKicks = 0, onUseConsumable, onOverrideAnswer, t, currentStreak = 0 }) => {
   const { playCorrect, playWrong, playGain } = useAudio();
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -28,9 +28,7 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
   const [hintUsed, setHintUsed] = useState(false);
   const [eliminatedOptions, setEliminatedOptions] = useState([]);
   const [extraTimeUsed, setExtraTimeUsed] = useState(false);
-  const [secondChanceUsed, setSecondChanceUsed] = useState(false);
-  const [secondChancePrompt, setSecondChancePrompt] = useState(false);
-  const [secondChanceActive, setSecondChanceActive] = useState(false);
+  const [freeKickUsed, setFreeKickUsed] = useState(false);
   const varDecidedRef = useRef(false);
   const submittedRef = useRef(false); // one submission per question, ever
 
@@ -54,9 +52,7 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     setHintUsed(false);
     setEliminatedOptions([]);
     setExtraTimeUsed(false);
-    setSecondChanceUsed(false);
-    setSecondChancePrompt(false);
-    setSecondChanceActive(false);
+    setFreeKickUsed(false);
     setStreak(currentStreak);
   }, [question, currentStreak]);
 
@@ -114,9 +110,6 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
 
     if (isCorrect) {
       playCorrect();
-      if (secondChanceActive && onOverrideAnswer) {
-        onOverrideAnswer(question.id);
-      }
       setStreak(prev => {
         const newStreak = prev + 1;
         if (newStreak >= 7) {
@@ -129,11 +122,6 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     }
 
     playWrong();
-
-    if (secondChances > 0 && !secondChanceUsed && choice !== null) {
-      setTimeout(() => setSecondChancePrompt(true), 900);
-      return;
-    }
 
     setStreak(0);
 
@@ -210,33 +198,19 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     }
   };
 
-  const acceptSecondChance = async () => {
-    try {
-      await onUseConsumable('secondChances');
-      setSecondChancePrompt(false);
-      setSecondChanceUsed(true);
-      setSecondChanceActive(true);
-      setIsPaused(false);
-      setTimeLeft(10);
-      playGain();
-      setEliminatedOptions(prev => [...prev, selectedOption]);
-      setSelectedOption(null);
-      setCorrectAnswer(null); // hide it again
-      submittedRef.current = false;
-    } catch (e) {
-      console.error(e);
-      setSecondChancePrompt(false);
-      advance(false, false);
-    }
-  };
-
-  const declineSecondChance = () => {
-    setSecondChancePrompt(false);
-    setStreak(0);
-    if (selectedOption !== null && !varUsed && varTokens > 0 && onUseVar) {
-      setTimeout(() => setVarPrompt(true), 400);
-    } else {
-      advance(false, false);
+  const handleFreeKick = async () => {
+    if (freeKicks > 0 && !freeKickUsed && !isPaused && onUseConsumable) {
+      try {
+        await onUseConsumable('freeKicks');
+        setFreeKickUsed(true);
+        playGain();
+        window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 40 } }));
+        
+        const correct = await fetchCorrectAnswer(question.id);
+        submitAndReveal(correct);
+      } catch (error) {
+        console.error("Free Kick failed:", error);
+      }
     }
   };
 
@@ -351,7 +325,7 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
                   : 'bg-white/5 border-white/10 text-gray-500 opacity-50 cursor-not-allowed'
               }`}
             >
-              <Lightbulb className="w-4 h-4" /> Hint (×{hints})
+              <Search className="w-4 h-4" /> Scout (×{hints})
             </button>
             <button
               onClick={handleExtraTime}
@@ -363,6 +337,17 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
               }`}
             >
               <Clock className="w-4 h-4" /> +10s (×{extraTime})
+            </button>
+            <button
+              onClick={handleFreeKick}
+              disabled={freeKicks < 1 || freeKickUsed || isPaused}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 font-black text-xs transition-colors ${
+                freeKicks > 0 && !freeKickUsed && !isPaused
+                  ? 'bg-purple-400/20 border-purple-400 text-purple-300 hover:bg-purple-400/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                  : 'bg-white/5 border-white/10 text-gray-500 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              <Zap className="w-4 h-4" /> Free Kick (×{freeKicks})
             </button>
           </div>
 
@@ -422,31 +407,7 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
         </div>
       )}
 
-      {/* ——— Second Wind overlay ——— */}
-      {secondChancePrompt && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
-          <div className="w-full max-w-sm glass-panel border-pink-400/50 p-7 text-center animate-float-up">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Heart className="w-6 h-6 text-pink-400 animate-pulse" fill="currentColor" />
-              <p className="text-pink-300 font-black uppercase tracking-widest text-lg">Second Wind</p>
-            </div>
-            <h3 className="text-xl font-black text-white uppercase tracking-wide mb-2">Incorrect Answer!</h3>
-            <p className="text-sm text-gray-300 font-medium mb-5">
-              You picked wrong, but you can use <span className="text-pink-300 font-black">1 Second Wind</span> to
-              eliminate your wrong choice and try again.
-            </p>
-            <button
-              onClick={acceptSecondChance}
-              className="w-full py-4 mb-3 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 text-white font-black text-lg uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(244,114,182,0.4)]"
-            >
-              <Heart className="w-5 h-5" fill="currentColor" /> Try Again! (×{secondChances})
-            </button>
-            <button onClick={declineSecondChance} className="w-full py-3 text-gray-400 font-bold uppercase tracking-wider text-sm hover:text-white transition-colors">
-              Accept defeat
-            </button>
-          </div>
-        </div>
-      )}
+
 
       {showQuitModal && (
         <QuitModal

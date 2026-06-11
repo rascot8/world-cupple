@@ -11,7 +11,7 @@ import { PACKS, PITY_THRESHOLD } from '../utils/stickers';
 import { purchaseCoins, purchaseItem, purchaseVip, purchaseBronzePackWithFP } from '../utils/economyService';
 import { getTodayUTCString } from '../utils/dailySeed';
 
-const ITEM_ICONS = { var: Tv, shield: Shield };
+
 
 /**
  * The Megastore: CupCoin bundles up top (the real-money funnel), then the
@@ -210,12 +210,8 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
           <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-fifa-neon" /> Matchday Gear
           </h3>
-          <p className="text-[10px] font-bold text-amber-300/80 uppercase tracking-wider mb-3">
-            💎 Legendary guaranteed within {Math.max(1, PITY_THRESHOLD - pity)} pack{PITY_THRESHOLD - pity === 1 ? '' : 's'}
-          </p>
-          <div className="space-y-3">
+          <div className="space-y-3 mt-3">
             {STORE_ITEMS.map((item) => {
-              const Icon = ITEM_ICONS[item.id];
               const owned = ownedOfItem(item);
               return (
                 <div key={item.id} className="glass-panel p-4 flex items-center justify-between">
@@ -224,7 +220,6 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
                     <div className="min-w-0">
                       <p className="font-black text-white flex items-center gap-2">
                         {item.name}
-                        {Icon && <Icon className="w-3.5 h-3.5 text-gray-400" />}
                         {owned > 0 && <span className="text-[9px] font-black bg-white/10 rounded px-1.5 py-0.5 text-gray-300">×{owned}</span>}
                       </p>
                       <p className="text-[10px] text-gray-400 font-bold leading-snug">{item.blurb}</p>

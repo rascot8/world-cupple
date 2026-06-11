@@ -41,7 +41,7 @@ export const STORE_ITEMS = [
   },
   {
     id: 'hint',
-    name: 'Hint Pack',
+    name: 'Scouting Report',
     icon: '💡',
     coins: 150,
     field: 'hints',
@@ -56,12 +56,12 @@ export const STORE_ITEMS = [
     blurb: 'Add 10 seconds to the timer when you need more time to think.'
   },
   {
-    id: 'second_chance',
-    name: 'Second Wind',
-    icon: '❤️',
+    id: 'free_kick',
+    name: 'Free Kick',
+    icon: '⚡',
     coins: 300,
-    field: 'secondChances',
-    blurb: 'Get a second chance to answer if you select the wrong option.'
+    field: 'freeKicks',
+    blurb: 'Automatically blast the correct answer into the net without guessing.'
   }
 ];
 
@@ -74,7 +74,7 @@ export const VIP = {
   fpMultiplier: 1.5, // applied to positive daily-match FP only
   dupeMultiplier: 2, // duplicate stickers convert at double FP
   perks: [
-    '💡 A daily care package: 1 Hint, 1 Extra Time, 1 Second Chance',
+    '💡 A daily care package: 1 Scout, 1 Extra Time, 1 Free Kick',
     '⚡ +50% Football Points on every winning Daily Match',
     '💱 Duplicates convert to FP at 2× value',
     '⭐ Gold name + star on the global leaderboard',
@@ -92,7 +92,7 @@ export const WELCOME_COINS = 100; // new accounts start with a taste of premium
 
 // ——— Daily Deal ———
 
-const DEAL_POOL = ['var', 'shield', 'hint', 'extra_time', 'second_chance'];
+const DEAL_POOL = ['var', 'shield', 'hint', 'extra_time', 'free_kick'];
 export const DEAL_DISCOUNT = 0.4;
 
 /** Deterministic per-UTC-day deal: same for every player, rotates at midnight. */

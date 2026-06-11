@@ -186,7 +186,7 @@ const App = () => {
         packGrants.bronze += milestone.packs.bronze;
       }
 
-      const consumableGrants = { hints: 0, extraTime: 0, secondChances: 0 };
+      const consumableGrants = { hints: 0, extraTime: 0, freeKicks: 0 };
       if (milestone?.consumables) {
         for (const [type, n] of Object.entries(milestone.consumables)) consumableGrants[type] += n;
       }
@@ -202,7 +202,7 @@ const App = () => {
         packBronze: (userData?.packBronze || 0) + packGrants.bronze,
         hints: (userData?.hints || 0) + consumableGrants.hints,
         extraTime: (userData?.extraTime || 0) + consumableGrants.extraTime,
-        secondChances: (userData?.secondChances || 0) + consumableGrants.secondChances
+        freeKicks: (userData?.freeKicks || 0) + consumableGrants.freeKicks
       };
 
       if (finalScore === 10) {
@@ -233,7 +233,7 @@ const App = () => {
           packBronze: newUserData.packBronze,
           hints: newUserData.hints,
           extraTime: newUserData.extraTime,
-          secondChances: newUserData.secondChances,
+          freeKicks: newUserData.freeKicks,
           perfectMatchesCount: newUserData.perfectMatchesCount || 0,
           badges: newUserData.badges || []
         });
@@ -481,7 +481,7 @@ const App = () => {
               onUseVar={handleUseVar}
               hints={userData?.hints || 0}
               extraTime={userData?.extraTime || 0}
-              secondChances={userData?.secondChances || 0}
+              freeKicks={userData?.freeKicks || 0}
               onUseConsumable={async (field) => {
                 const { consumeConsumable } = await import('./utils/economyService');
                 const partial = await consumeConsumable(currentUser.uid, userData, field);

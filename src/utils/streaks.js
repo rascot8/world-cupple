@@ -35,15 +35,15 @@ export const computeStreakUpdate = (userData, today) => {
 const MILESTONES = {
   3: { fp: 50, coins: 0, packs: { bronze: 1 }, label: 'Group Stage Form' },
   7: { fp: 100, coins: 50, consumables: { hints: 1, extraTime: 1 }, label: 'One Week Wonder' },
-  14: { fp: 200, coins: 100, consumables: { hints: 2, extraTime: 2, secondChances: 1 }, label: 'Two-Week Titan' },
+  14: { fp: 200, coins: 100, consumables: { hints: 2, extraTime: 2, freeKicks: 1 }, label: 'Two-Week Titan' },
   21: { fp: 300, coins: 150, consumables: { hints: 3, extraTime: 3 }, label: 'Knockout Material' },
-  30: { fp: 500, coins: 300, consumables: { hints: 5, extraTime: 5, secondChances: 2 }, label: 'The Invincible' }
+  30: { fp: 500, coins: 300, consumables: { hints: 5, extraTime: 5, freeKicks: 2 }, label: 'The Invincible' }
 };
 
 export const getMilestoneReward = (streak) => {
   if (MILESTONES[streak]) return { streak, ...MILESTONES[streak] };
   if (streak > 30 && streak % 7 === 0) {
-    return { streak, fp: 150, coins: 75, consumables: { hints: 2, extraTime: 2, secondChances: 1 }, label: 'Still Standing' };
+    return { streak, fp: 150, coins: 75, consumables: { hints: 2, extraTime: 2, freeKicks: 1 }, label: 'Still Standing' };
   }
   return null;
 };
