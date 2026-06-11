@@ -127,6 +127,20 @@ const App = () => {
               finalUserData = updatedSnap.data();
             }
 
+            // --- TAYDOE OVERRIDES ---
+            if (finalUserData && finalUserData.username === 'Taydoe') {
+              finalUserData.isAdmin = true;
+              if (!finalUserData.taydoeBonusGranted) {
+                finalUserData.coins = (finalUserData.coins || 0) + 2000;
+                finalUserData.taydoeBonusGranted = true;
+                updateDoc(userRef, { 
+                  coins: finalUserData.coins,
+                  taydoeBonusGranted: true
+                }).catch(console.error);
+              }
+            }
+            // ------------------------
+
             setUserData(finalUserData);
           }
           setGameState('dashboard');
