@@ -177,27 +177,36 @@ const App = () => {
     return () => { cancelled = true; };
   }, [dailyQuiz, currentQuestionIndex]);
 
+  const handleForfeit = async () => {
+    await finishQuiz('forfeit', dailyQuiz);
+  };
+
   const finishQuiz = async (finalScore, quiz, stats = { maxStreak: 0, fastAnswers: 0 }) => {
-    setScore(finalScore);
+    const isForfeit = finalScore === 'forfeit';
+    const actualScore = isForfeit ? 0 : finalScore;
+    
+    setScore(actualScore);
     const today = getTodayUTCString();
 
     // Don't award FP twice if the quiz was already completed today
     if (userData?.lastPlayedDate !== today) {
       const isVip = !!userData?.vip;
-      const baseFpChange = calculateDailyFPChange(finalScore);
-      const fpChange = applyVipFp(baseFpChange, isVip); // Captain's Club: +50% on wins
+      const baseFpChange = isForfeit ? -50 : calculateDailyFPChange(actualScore);
+      const fpChange = isForfeit ? -50 : applyVipFp(baseFpChange, isVip); // Captain's Club: +50% on wins
 
       // Consecutive-day streak (Streak Shields bridge one missed day)
-      const { newStreak, usedFreeze } = computeStreakUpdate(userData, today);
-      const milestone = getMilestoneReward(newStreak);
+      const { newStreak, usedFreeze } = isForfeit 
+        ? { newStreak: Math.max(0, userData?.playStreak || 0), usedFreeze: false }
+        : computeStreakUpdate(userData, today);
+      const milestone = isForfeit ? null : getMilestoneReward(newStreak);
 
-      const coinsEarned = DAILY_MATCH_COINS + (milestone?.coins || 0);
+      const coinsEarned = isForfeit ? 0 : (DAILY_MATCH_COINS + (milestone?.coins || 0));
       const newTotalFP = Math.max(0, (userData?.fp || 0) + fpChange + (milestone?.fp || 0));
 
       // Every completed match earns a free Bronze Pack; milestones add more.
-      const packGrants = { bronze: 1 };
-      if (milestone?.packs?.bronze) {
-        packGrants.bronze += milestone.packs.bronze;
+      const packGrants = milestone?.packs ? { ...milestone.packs } : { bronze: 0 };
+      if (!isForfeit) {
+        packGrants.bronze = (packGrants.bronze || 0) + 1;
       }
 
       const consumableGrants = { hints: 0, extraTime: 0, freeKicks: 0 };
@@ -394,11 +403,6 @@ const App = () => {
       await finishQuiz(newScore, dailyQuiz, { maxStreak: newMaxStreak, fastAnswers: newFastAnswers });
     }
   };
-
-  const handleForfeit = async () => {
-    await finishQuiz(0, dailyQuiz);
-  };
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-fifa-neon font-bold text-xl uppercase tracking-widest">

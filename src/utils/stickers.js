@@ -14,7 +14,7 @@ export const RARITIES = {
   common: {
     id: 'common',
     label: 'Common',
-    dupeFP: 15,
+    dupeCP: 5,
     text: 'text-gray-300',
     frame: 'border-white/20 bg-gradient-to-b from-white/10 to-white/[0.03]',
     glow: '',
@@ -23,7 +23,7 @@ export const RARITIES = {
   rare: {
     id: 'rare',
     label: 'Rare',
-    dupeFP: 40,
+    dupeCP: 15,
     text: 'text-sky-300',
     frame: 'border-sky-400/50 bg-gradient-to-b from-sky-500/20 to-sky-900/10',
     glow: 'shadow-[0_0_14px_rgba(56,189,248,0.25)]',
@@ -32,7 +32,7 @@ export const RARITIES = {
   epic: {
     id: 'epic',
     label: 'Epic',
-    dupeFP: 100,
+    dupeCP: 40,
     text: 'text-fuchsia-300',
     frame: 'border-fuchsia-400/60 bg-gradient-to-b from-fuchsia-500/25 to-purple-900/20',
     glow: 'shadow-[0_0_18px_rgba(217,70,239,0.35)]',
@@ -41,7 +41,7 @@ export const RARITIES = {
   legendary: {
     id: 'legendary',
     label: 'Legendary',
-    dupeFP: 250,
+    dupeCP: 100,
     text: 'text-yellow-300',
     frame: 'border-yellow-400/80 foil-legendary',
     glow: 'shadow-[0_0_24px_rgba(250,204,21,0.45)]',
@@ -213,9 +213,9 @@ const pickStickerOfRarity = (rarity, alreadyRolled, ownedMap) => {
 
 /**
  * Roll the contents of a pack.
- * Returns { stickers: [{...sticker, isNew, dupeFP}], dupeFP, legendaryHit, newPity }
+ * Returns { stickers: [{...sticker, isNew}], legendaryHit, newPity }
  */
-export const rollPack = (packId, ownedMap = {}, packsSinceLegendary = 0, dupeMultiplier = 1) => {
+export const rollPack = (packId, ownedMap = {}, packsSinceLegendary = 0) => {
   const pack = PACKS[packId];
   const rolled = new Set();
   const results = [];
@@ -231,15 +231,12 @@ export const rollPack = (packId, ownedMap = {}, packsSinceLegendary = 0, dupeMul
   }
 
   const counts = { ...ownedMap };
-  let dupeFP = 0;
   for (const rarity of rarities) {
     const sticker = pickStickerOfRarity(rarity, rolled, counts);
     rolled.add(sticker.id);
     const isNew = !(counts[sticker.id] > 0);
-    const fp = isNew ? 0 : Math.round(RARITIES[rarity].dupeFP * dupeMultiplier);
-    dupeFP += fp;
     counts[sticker.id] = (counts[sticker.id] || 0) + 1;
-    results.push({ ...sticker, isNew, dupeFP: fp });
+    results.push({ ...sticker, isNew });
   }
 
   // Big reveals last — the ceremony builds to the best card.
@@ -249,7 +246,6 @@ export const rollPack = (packId, ownedMap = {}, packsSinceLegendary = 0, dupeMul
   return {
     packId,
     stickers: results,
-    dupeFP,
     legendaryHit,
     newPity: legendaryHit ? 0 : packsSinceLegendary + 1
   };

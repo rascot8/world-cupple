@@ -105,8 +105,8 @@ const PackOpeningModal = ({ packId, result, remainingPacks = 0, onOpenAnother, o
                         )}
                         <StickerCard sticker={sticker} size="lg" highlightNew={sticker.isNew} count={0} />
                         {!sticker.isNew && isFlipped && (
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 border border-white/20 rounded-full px-2 py-0.5 text-[10px] font-black text-gold-glow whitespace-nowrap">
-                            DUPE → +{sticker.dupeFP} FP
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 border border-white/20 rounded-full px-2 py-0.5 text-[10px] font-black text-gray-400 whitespace-nowrap">
+                            DUPLICATE
                           </div>
                         )}
                       </div>
@@ -141,7 +141,7 @@ const PackOpeningModal = ({ packId, result, remainingPacks = 0, onOpenAnother, o
             <h2 className="text-3xl font-black text-white uppercase tracking-wider mb-2">Pack opened!</h2>
           )}
           <p className="text-gray-400 text-sm font-bold mb-6">
-            {newCount > 0 ? `${newCount} new sticker${newCount === 1 ? '' : 's'} for your album` : 'All duplicates — converted to FP'}
+            {newCount > 0 ? `${newCount} new sticker${newCount === 1 ? '' : 's'} for your album` : 'All duplicates (can be sold in the Album)'}
           </p>
 
           <div className="glass-panel w-full p-5 mb-6 space-y-3">
@@ -154,18 +154,10 @@ const PackOpeningModal = ({ packId, result, remainingPacks = 0, onOpenAnother, o
                 {s.isNew ? (
                   <span className="text-[10px] font-black uppercase bg-fifa-neon/15 text-fifa-neon border border-fifa-neon/40 rounded px-2 py-0.5 shrink-0">NEW</span>
                 ) : (
-                  <span className="text-[11px] font-black text-gold-glow shrink-0">+{s.dupeFP} FP</span>
+                  <span className="text-[11px] font-black text-gray-500 shrink-0">DUPLICATE</span>
                 )}
               </div>
             ))}
-            {result.dupeFP > 0 && (
-              <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Coins className="w-3.5 h-3.5" /> Duplicate value
-                </span>
-                <span className="font-black text-gold-glow">+{result.dupeFP} FP</span>
-              </div>
-            )}
           </div>
 
           {remainingPacks > 0 && onOpenAnother ? (

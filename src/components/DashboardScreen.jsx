@@ -32,6 +32,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
   const [selectedCountry, setSelectedCountry] = useState('');
   const [copied, setCopied] = useState(false);
   const [claimingVip, setClaimingVip] = useState(false);
+  const [showVipRewardModal, setShowVipRewardModal] = useState(false);
 
   const today = getTodayUTCString();
   const hasPlayedToday = userData?.lastPlayedDate === today && !userData?.isAdmin;
@@ -54,13 +55,12 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
   }, [userData]);
 
   useEffect(() => {
-    if (hasPlayedToday) {
-      const interval = setInterval(() => {
-        setTimeLeft(formatCountdown(msUntilUtcMidnight()));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [hasPlayedToday]);
+    setTimeLeft(formatCountdown(msUntilUtcMidnight()));
+    const interval = setInterval(() => {
+      setTimeLeft(formatCountdown(msUntilUtcMidnight()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const saveCountry = async (code) => {
     const selected = code || selectedCountry || 'NONE';
@@ -87,6 +87,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
     try {
       const partial = await claimVipDailyPack(auth.currentUser.uid, userData);
       onUpdateUser(partial);
+      setShowVipRewardModal(true);
     } catch (e) {
       console.error('VIP claim failed:', e);
     } finally {
@@ -157,26 +158,30 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
         </div>
 
         {/* Streak flame + week dots */}
-        <div className="glass-panel w-full p-4 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className={`text-3xl ${streak > 0 ? 'animate-flame-flicker' : 'grayscale opacity-40'}`}>🔥</span>
-            <div>
-              <p className="font-black text-white leading-none">
-                {streak > 0 ? `${streak}-day streak` : 'Start your streak!'}
+        <div className="glass-panel w-full px-3 py-2.5 mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`text-xl ${streak > 0 ? 'animate-flame-flicker' : 'grayscale opacity-40'}`}>🔥</span>
+            <div className="flex flex-col justify-center">
+              <p className="font-black text-white text-xs leading-none">
+                {streak > 0 ? `${streak}-day streak` : 'Start streak!'}
               </p>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">
-                {streak > 0 ? `Reward at day ${nextMilestone}` : 'Play today to ignite it'}
-                {(userData?.streakFreezes || 0) > 0 && <span className="text-sky-300 ml-1.5">🛡️×{userData.streakFreezes}</span>}
+              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                {streak > 0 ? `Reward day ${nextMilestone}` : 'Play to ignite'}
+                {(userData?.streakFreezes || 0) > 0 && <span className="text-sky-300 ml-1">🛡️×{userData.streakFreezes}</span>}
               </p>
             </div>
           </div>
-          <div className="flex gap-1">
-            {dots.map((d) => (
-              <div
-                key={d.day}
-                title={d.day}
-                className={`w-3.5 h-3.5 rounded-full border ${d.played ? 'bg-fifa-neon border-fifa-neon shadow-[0_0_6px_rgba(57,255,20,0.5)]' : d.isToday ? 'border-fifa-neon/60 border-dashed bg-transparent animate-pulse' : 'border-white/15 bg-white/5'}`}
-              />
+          <div className="flex flex-1 justify-between items-center max-w-[180px]">
+            {dots.map((d, i) => (
+              <div key={d.day} className="flex flex-col items-center gap-1">
+                <div
+                  title={d.day}
+                  className={`w-3.5 h-3.5 rounded-full border ${d.played ? 'bg-fifa-neon border-fifa-neon shadow-[0_0_6px_rgba(57,255,20,0.5)]' : d.isToday ? 'border-fifa-neon/60 border-dashed bg-transparent animate-pulse' : 'border-white/15 bg-white/5'}`}
+                />
+                <span className={`text-[7px] font-bold uppercase tracking-widest ${d.played ? 'text-fifa-neon' : d.isToday ? 'text-fifa-neon/60' : 'text-gray-500'}`}>
+                  D{i + 1}
+                </span>
+              </div>
             ))}
           </div>
         </div>
@@ -193,7 +198,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
               <div>
                 <p className="font-black text-white text-sm uppercase tracking-wide">Captain’s Club</p>
                 <p className="text-[10px] font-bold text-gray-300">
-                  {vipClaimAvailable ? 'Your daily care package is ready!' : 'Claimed — next package at midnight UTC'}
+                  {vipClaimAvailable ? 'Your daily care package is ready!' : `Claimed — next package in ${timeLeft}`}
                 </p>
               </div>
             </div>
@@ -267,13 +272,6 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
         </button>
 
         <MatchDayPicksSection />
-        <button
-          onClick={handleCopyInvite}
-          className="flex items-center justify-center text-sm font-bold text-gray-400 hover:text-fifa-neon transition-colors"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          {copied ? "Link Copied!" : "Invite Friends"}
-        </button>
 
       </div>
 
@@ -314,6 +312,37 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
               className="w-full py-3 rounded-xl bg-transparent border border-white/10 text-gray-400 font-bold uppercase tracking-wider hover:bg-white/5 transition-colors"
             >
               No thanks
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showVipRewardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+          <div className="w-full max-w-sm glass-panel border-yellow-400/50 p-7 text-center animate-float-up">
+            <h3 className="text-2xl font-black text-white uppercase tracking-wide mb-2">Care Package</h3>
+            <p className="text-sm text-gray-300 font-medium mb-5">
+              Captain's Club daily drop secured.
+            </p>
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                <span className="font-black text-white">Scout</span>
+                <span className="font-black text-amber-300">×1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                <span className="font-black text-white">Extra Time</span>
+                <span className="font-black text-blue-300">×1</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                <span className="font-black text-white">Free Kick</span>
+                <span className="font-black text-purple-300">×1</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowVipRewardModal(false)}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-300 to-amber-500 text-black font-black text-lg uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform"
+            >
+              Awesome
             </button>
           </div>
         </div>

@@ -95,8 +95,7 @@ export const openOwnedPack = async (uid, userData, packId) => {
   const ownedPacks = userData[field] || 0;
   if (ownedPacks < 1) throw new Error('No packs of that type to open.');
 
-  const dupeMult = userData.vip ? VIP.dupeMultiplier : 1;
-  const result = rollPack(packId, userData.stickers || {}, userData.packsSinceLegendary || 0, dupeMult);
+  const result = rollPack(packId, userData.stickers || {}, userData.packsSinceLegendary || 0);
 
   const stickers = { ...(userData.stickers || {}) };
   for (const s of result.stickers) stickers[s.id] = (stickers[s.id] || 0) + 1;
@@ -105,12 +104,27 @@ export const openOwnedPack = async (uid, userData, packId) => {
   const partial = {
     [field]: ownedPacks - 1,
     stickers,
-    fp: Math.max(0, (userData.fp || 0) + result.dupeFP),
     packsSinceLegendary: result.newPity,
     ...(newBadges.length > 0 ? { badges: [...(userData.badges || []), ...newBadges] } : {})
   };
   await write(uid, partial);
   return { result: { ...result, newBadges }, partial };
+};
+
+export const sellDuplicateSticker = async (uid, userData, stickerId) => {
+  const count = userData.stickers?.[stickerId] || 0;
+  if (count <= 1) throw new Error('No duplicate to sell.');
+  
+  const sticker = STICKERS_BY_ID[stickerId];
+  const rarity = RARITIES[sticker.rarity];
+  const coinsEarned = rarity.dupeCP;
+  
+  const partial = {
+    coins: (userData.coins || 0) + coinsEarned,
+    stickers: { ...userData.stickers, [stickerId]: count - 1 }
+  };
+  await write(uid, partial);
+  return partial;
 };
 
 /** Captain's Club daily care package — one claim per UTC day. */

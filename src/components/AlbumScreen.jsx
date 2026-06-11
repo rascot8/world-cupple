@@ -4,7 +4,7 @@ import { auth } from '../config/firebase';
 import BrandHeader from './BrandHeader';
 import StickerCard from './StickerCard';
 import { STICKERS, PAGES, PACKS, RARITIES, albumProgress, PAGE_REWARD_COINS } from '../utils/stickers';
-import { claimPageReward } from '../utils/economyService';
+import { claimPageReward, sellDuplicateSticker } from '../utils/economyService';
 import { useAudio } from '../contexts/AudioContext';
 
 /**
@@ -36,6 +36,18 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
       onUpdateUser(partial);
       playGain();
       window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 80, gold: true } }));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const handleSellDuplicate = async (stickerId) => {
+    setError('');
+    try {
+      const partial = await sellDuplicateSticker(uid, userData, stickerId);
+      onUpdateUser(partial);
+      playGain();
+      window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 30, gold: true } }));
     } catch (e) {
       setError(e.message);
     }
@@ -174,8 +186,16 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
               {owned[detail.id] > 0 ? `“${detail.flavor}”` : 'Find this sticker in packs to reveal its story.'}
             </p>
             <p className="mt-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-              Duplicate value: {RARITIES[detail.rarity].dupeFP} FP
+              Duplicate value: {RARITIES[detail.rarity].dupeCP} CupCoins
             </p>
+            {(owned[detail.id] || 0) > 1 && (
+              <button
+                onClick={() => handleSellDuplicate(detail.id)}
+                className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-700 text-white font-black text-sm uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2"
+              >
+                <Coins className="w-4 h-4" /> Sell Duplicate (+{RARITIES[detail.rarity].dupeCP})
+              </button>
+            )}
             {!(owned[detail.id] > 0) && (
               <p className="mt-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">
                 Keep opening packs to find this legend.

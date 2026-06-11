@@ -70,7 +70,7 @@ export const weekDots = (userData, today) => {
     for (let i = 0; i < streak; i++) covered.add(addDaysUTC(last, -i));
   }
   const dots = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 0; i <= 6; i++) {
     const day = addDaysUTC(today, -i);
     dots.push({ day, played: covered.has(day), isToday: day === today });
   }
