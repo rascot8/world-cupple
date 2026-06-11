@@ -4,7 +4,7 @@ import { auth } from '../config/firebase';
 import BrandHeader from './BrandHeader';
 import StickerCard from './StickerCard';
 import { STICKERS, PAGES, PACKS, RARITIES, albumProgress, PAGE_REWARD_COINS } from '../utils/stickers';
-import { claimPageReward, redeemWildcardOn } from '../utils/economyService';
+import { claimPageReward } from '../utils/economyService';
 import { useAudio } from '../contexts/AudioContext';
 
 /**
@@ -25,9 +25,7 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
   const wildcards = userData?.wildcards || 0;
 
   const packInventory = [
-    { id: 'bronze', count: userData?.packBronze || 0 },
-    { id: 'gold', count: userData?.packGold || 0 },
-    { id: 'legendary', count: userData?.packLegendary || 0 }
+    { id: 'bronze', count: userData?.packBronze || 0 }
   ];
   const totalPacks = packInventory.reduce((s, p) => s + p.count, 0);
 
@@ -43,18 +41,7 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
     }
   };
 
-  const handleWildcard = async (sticker) => {
-    setError('');
-    try {
-      const partial = await redeemWildcardOn(uid, userData, sticker.id);
-      onUpdateUser(partial);
-      playGain();
-      window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 100, gold: sticker.rarity === 'legendary' } }));
-      setDetail(null);
-    } catch (e) {
-      setError(e.message);
-    }
-  };
+
 
   const pageInfo = PAGES.find((p) => p.id === activePage);
   const pageStickers = STICKERS.filter((s) => s.page === activePage);
@@ -95,9 +82,6 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
             <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-1.5">
               <Gift className="w-4 h-4 text-fifa-neon" /> Your packs
             </span>
-            {wildcards > 0 && (
-              <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider">🃏 {wildcards} wildcard{wildcards === 1 ? '' : 's'} — tap a missing sticker</span>
-            )}
           </div>
           {totalPacks === 0 ? (
             <button onClick={onGoStore} className="w-full py-3 rounded-xl bg-white/5 border border-dashed border-white/20 text-gray-400 text-sm font-bold uppercase tracking-wider hover:text-white hover:border-white/40 transition-colors">
@@ -192,21 +176,10 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
             <p className="mt-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
               Duplicate value: {RARITIES[detail.rarity].dupeFP} FP
             </p>
-            {!(owned[detail.id] > 0) && wildcards > 0 && (
-              <button
-                onClick={() => handleWildcard(detail)}
-                className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-300 to-amber-500 text-black font-black uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" /> Use Golden Wildcard ({wildcards})
-              </button>
-            )}
-            {!(owned[detail.id] > 0) && wildcards === 0 && (
-              <button
-                onClick={() => { setDetail(null); onGoStore(); }}
-                className="mt-4 text-xs font-bold text-amber-300 uppercase tracking-wider hover:text-amber-200"
-              >
-                🃏 Get a Golden Wildcard in the store →
-              </button>
+            {!(owned[detail.id] > 0) && (
+              <p className="mt-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">
+                Keep opening packs to find this legend.
+              </p>
             )}
           </div>
         </div>

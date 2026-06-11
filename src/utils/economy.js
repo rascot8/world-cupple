@@ -40,28 +40,28 @@ export const STORE_ITEMS = [
     blurb: 'Miss a day, keep your streak. Consumed automatically.'
   },
   {
-    id: 'pack_gold',
-    name: 'Gold Pack',
-    icon: '🥇',
-    coins: 250,
-    field: 'packGold',
-    blurb: '4 stickers, rare or better guaranteed.'
+    id: 'hint',
+    name: 'Hint Pack',
+    icon: '💡',
+    coins: 150,
+    field: 'hints',
+    blurb: 'Remove one incorrect answer from the options.'
   },
   {
-    id: 'pack_legendary',
-    name: 'Legendary Pack',
-    icon: '💎',
-    coins: 600,
-    field: 'packLegendary',
-    blurb: '5 stickers, epic guaranteed, 3× legendary odds.'
+    id: 'extra_time',
+    name: 'Extra Time',
+    icon: '⏱️',
+    coins: 150,
+    field: 'extraTime',
+    blurb: 'Add 10 seconds to the timer when you need more time to think.'
   },
   {
-    id: 'wildcard',
-    name: 'Golden Wildcard',
-    icon: '🃏',
-    coins: 900,
-    field: 'wildcards',
-    blurb: 'Unlock ANY missing sticker you choose. Album closers only.'
+    id: 'second_chance',
+    name: 'Second Wind',
+    icon: '❤️',
+    coins: 300,
+    field: 'secondChances',
+    blurb: 'Get a second chance to answer if you select the wrong option.'
   }
 ];
 
@@ -74,7 +74,7 @@ export const VIP = {
   fpMultiplier: 1.5, // applied to positive daily-match FP only
   dupeMultiplier: 2, // duplicate stickers convert at double FP
   perks: [
-    '🥇 A free Gold Pack to claim every single day',
+    '💡 A daily care package: 1 Hint, 1 Extra Time, 1 Second Chance',
     '⚡ +50% Football Points on every winning Daily Match',
     '💱 Duplicates convert to FP at 2× value',
     '⭐ Gold name + star on the global leaderboard',
@@ -92,7 +92,7 @@ export const WELCOME_COINS = 100; // new accounts start with a taste of premium
 
 // ——— Daily Deal ———
 
-const DEAL_POOL = ['var', 'shield', 'pack_gold', 'pack_legendary', 'wildcard'];
+const DEAL_POOL = ['var', 'shield', 'hint', 'extra_time', 'second_chance'];
 export const DEAL_DISCOUNT = 0.4;
 
 /** Deterministic per-UTC-day deal: same for every player, rotates at midnight. */

@@ -42,7 +42,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
   const deal = getDailyDeal(today);
   const tournament = getTournamentStatus(today);
   const album = albumProgress(userData?.stickers || {});
-  const unopenedPacks = (userData?.packBronze || 0) + (userData?.packGold || 0) + (userData?.packLegendary || 0);
+  const unopenedPacks = userData?.packBronze || 0;
   const vipClaimAvailable = userData?.vip && userData?.vipClaimedDate !== today;
 
   useEffect(() => {
@@ -87,8 +87,6 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
     try {
       const partial = await claimVipDailyPack(auth.currentUser.uid, userData);
       onUpdateUser(partial);
-      // State hasn't flushed yet — hand the ceremony the post-claim snapshot.
-      onOpenPack('gold', { ...userData, ...partial });
     } catch (e) {
       console.error('VIP claim failed:', e);
     } finally {
@@ -195,13 +193,13 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
               <div>
                 <p className="font-black text-white text-sm uppercase tracking-wide">Captain’s Club</p>
                 <p className="text-[10px] font-bold text-gray-300">
-                  {vipClaimAvailable ? 'Your daily Gold Pack is ready!' : 'Claimed — next pack at midnight UTC'}
+                  {vipClaimAvailable ? 'Your daily care package is ready!' : 'Claimed — next package at midnight UTC'}
                 </p>
               </div>
             </div>
             {vipClaimAvailable && (
               <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-yellow-300 to-amber-500 text-black text-xs font-black uppercase">
-                {claimingVip ? '…' : 'Claim 🥇'}
+                {claimingVip ? '…' : 'Claim 🎁'}
               </span>
             )}
           </button>
@@ -228,7 +226,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
         {/* Unopened packs nudge */}
         {unopenedPacks > 0 && (
           <button
-            onClick={() => onOpenPack((userData?.packLegendary || 0) > 0 ? 'legendary' : (userData?.packGold || 0) > 0 ? 'gold' : 'bronze')}
+            onClick={() => onOpenPack('bronze')}
             className="w-full p-3.5 mb-4 rounded-2xl bg-fifa-neon/10 border border-fifa-neon/40 flex items-center justify-center gap-2 font-black text-fifa-neon uppercase tracking-wider text-sm hover:bg-fifa-neon/20 transition-colors"
           >
             <Gift className="w-5 h-5 animate-pack-wiggle" />

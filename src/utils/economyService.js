@@ -113,12 +113,17 @@ export const openOwnedPack = async (uid, userData, packId) => {
   return { result: { ...result, newBadges }, partial };
 };
 
-/** Captain's Club daily Gold Pack — one claim per UTC day. */
+/** Captain's Club daily care package — one claim per UTC day. */
 export const claimVipDailyPack = async (uid, userData) => {
   if (!userData.vip) throw new Error('Captain’s Club members only.');
   const today = getTodayUTCString();
   if (userData.vipClaimedDate === today) throw new Error('Already claimed today — come back tomorrow!');
-  const partial = { vipClaimedDate: today, packGold: (userData.packGold || 0) + 1 };
+  const partial = { 
+    vipClaimedDate: today, 
+    hints: (userData.hints || 0) + 1,
+    extraTime: (userData.extraTime || 0) + 1,
+    secondChances: (userData.secondChances || 0) + 1
+  };
   await write(uid, partial);
   return partial;
 };
@@ -148,21 +153,11 @@ export const consumeVarToken = async (uid, userData) => {
   return partial;
 };
 
-/** Spend a Golden Wildcard on any missing sticker. */
-export const redeemWildcardOn = async (uid, userData, stickerId) => {
-  const sticker = STICKERS_BY_ID[stickerId];
-  if (!sticker) throw new Error('Unknown sticker.');
-  const wildcards = userData.wildcards || 0;
-  if (wildcards < 1) throw new Error('No Golden Wildcards.');
-  const stickers = { ...(userData.stickers || {}) };
-  if (stickers[stickerId] > 0) throw new Error('You already own that sticker.');
-  stickers[stickerId] = 1;
-  const newBadges = collectionBadges(userData, stickers);
-  const partial = {
-    wildcards: wildcards - 1,
-    stickers,
-    ...(newBadges.length > 0 ? { badges: [...(userData.badges || []), ...newBadges] } : {})
-  };
+/** Consume a generic gameplay item. */
+export const consumeConsumable = async (uid, userData, field) => {
+  const current = userData[field] || 0;
+  if (current < 1) throw new Error(`Not enough ${field}.`);
+  const partial = { [field]: current - 1 };
   await write(uid, partial);
   return partial;
 };

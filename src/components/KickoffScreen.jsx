@@ -3,7 +3,7 @@ import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
 
 const KickoffScreen = ({ onFinish }) => {
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(10);
   const { playWhistle } = useAudio();
   const finishedRef = useRef(false);
 

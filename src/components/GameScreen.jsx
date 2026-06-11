@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
-import { X, Tv } from 'lucide-react';
+import { fetchCorrectAnswer } from '../utils/quizService';
+import { X, Tv, Lightbulb, Clock, Heart } from 'lucide-react';
 import QuitModal from './QuitModal';
 
 // question: { id, text, options } — the correct answer is NOT in this object.
@@ -12,7 +13,7 @@ import QuitModal from './QuitModal';
 // from the store; this is the mid-match monetization hook.
 const VAR_DECISION_SECONDS = 7;
 
-const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, t, currentStreak = 0 }) => {
+const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, hints = 0, extraTime = 0, secondChances = 0, onUseConsumable, onOverrideAnswer, t, currentStreak = 0 }) => {
   const { playCorrect, playWrong, playGain } = useAudio();
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -24,6 +25,12 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
   const [varPrompt, setVarPrompt] = useState(false);
   const [varCountdown, setVarCountdown] = useState(VAR_DECISION_SECONDS);
   const [overturned, setOverturned] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [eliminatedOptions, setEliminatedOptions] = useState([]);
+  const [extraTimeUsed, setExtraTimeUsed] = useState(false);
+  const [secondChanceUsed, setSecondChanceUsed] = useState(false);
+  const [secondChancePrompt, setSecondChancePrompt] = useState(false);
+  const [secondChanceActive, setSecondChanceActive] = useState(false);
   const varDecidedRef = useRef(false);
   const submittedRef = useRef(false); // one submission per question, ever
 
@@ -44,6 +51,12 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     setOverturned(false);
     varDecidedRef.current = false;
     submittedRef.current = false;
+    setHintUsed(false);
+    setEliminatedOptions([]);
+    setExtraTimeUsed(false);
+    setSecondChanceUsed(false);
+    setSecondChancePrompt(false);
+    setSecondChanceActive(false);
     setStreak(currentStreak);
   }, [question, currentStreak]);
 
@@ -101,6 +114,9 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
 
     if (isCorrect) {
       playCorrect();
+      if (secondChanceActive && onOverrideAnswer) {
+        onOverrideAnswer(question.id);
+      }
       setStreak(prev => {
         const newStreak = prev + 1;
         if (newStreak >= 7) {
@@ -113,6 +129,12 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     }
 
     playWrong();
+
+    if (secondChances > 0 && !secondChanceUsed && choice !== null) {
+      setTimeout(() => setSecondChancePrompt(true), 900);
+      return;
+    }
+
     setStreak(0);
 
     // Wrong call — offer the VAR review if the player can afford the drama.
@@ -154,7 +176,75 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     }
   };
 
+  const handleHint = async () => {
+    if (hints > 0 && !hintUsed && !isPaused && onUseConsumable) {
+      try {
+        await onUseConsumable('hints');
+        setHintUsed(true);
+        playGain();
+        window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 20 } }));
+        
+        const correct = await fetchCorrectAnswer(question.id);
+        const incorrects = options.filter(o => o !== correct && !eliminatedOptions.includes(o));
+        if (incorrects.length > 0) {
+          const toElim = incorrects[Math.floor(Math.random() * incorrects.length)];
+          setEliminatedOptions(prev => [...prev, toElim]);
+        }
+      } catch (error) {
+        console.error("Hint failed:", error);
+      }
+    }
+  };
+
+  const handleExtraTime = async () => {
+    if (extraTime > 0 && !extraTimeUsed && !isPaused && onUseConsumable) {
+      try {
+        await onUseConsumable('extraTime');
+        setExtraTimeUsed(true);
+        setTimeLeft(prev => prev + 10);
+        playGain();
+        window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 20 } }));
+      } catch (error) {
+        console.error("Extra time failed:", error);
+      }
+    }
+  };
+
+  const acceptSecondChance = async () => {
+    try {
+      await onUseConsumable('secondChances');
+      setSecondChancePrompt(false);
+      setSecondChanceUsed(true);
+      setSecondChanceActive(true);
+      setIsPaused(false);
+      setTimeLeft(10);
+      playGain();
+      setEliminatedOptions(prev => [...prev, selectedOption]);
+      setSelectedOption(null);
+      setCorrectAnswer(null); // hide it again
+      submittedRef.current = false;
+    } catch (e) {
+      console.error(e);
+      setSecondChancePrompt(false);
+      advance(false, false);
+    }
+  };
+
+  const declineSecondChance = () => {
+    setSecondChancePrompt(false);
+    setStreak(0);
+    if (selectedOption !== null && !varUsed && varTokens > 0 && onUseVar) {
+      setTimeout(() => setVarPrompt(true), 400);
+    } else {
+      advance(false, false);
+    }
+  };
+
   const getOptionClass = (opt) => {
+    if (eliminatedOptions.includes(opt)) {
+      return 'bg-white/5 border-white/5 opacity-20 pointer-events-none scale-95';
+    }
+
     if (!isPaused) return 'bg-white/10 hover:bg-white/20 border-white/20';
 
     // Submitted, waiting for the server to reveal the answer
@@ -250,13 +340,39 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
             </h2>
           </div>
 
+          {/* Consumables Bar */}
+          <div className="flex gap-3 mt-4 mb-2 justify-center">
+            <button
+              onClick={handleHint}
+              disabled={hints < 1 || hintUsed || isPaused}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 font-black text-xs transition-colors ${
+                hints > 0 && !hintUsed && !isPaused
+                  ? 'bg-amber-400/20 border-amber-400 text-amber-300 hover:bg-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.2)]'
+                  : 'bg-white/5 border-white/10 text-gray-500 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              <Lightbulb className="w-4 h-4" /> Hint (×{hints})
+            </button>
+            <button
+              onClick={handleExtraTime}
+              disabled={extraTime < 1 || extraTimeUsed || isPaused}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 font-black text-xs transition-colors ${
+                extraTime > 0 && !extraTimeUsed && !isPaused
+                  ? 'bg-blue-400/20 border-blue-400 text-blue-300 hover:bg-blue-400/30 shadow-[0_0_10px_rgba(96,165,250,0.2)]'
+                  : 'bg-white/5 border-white/10 text-gray-500 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              <Clock className="w-4 h-4" /> +10s (×{extraTime})
+            </button>
+          </div>
+
           {/* Options */}
-          <div className="space-y-4 mt-8">
+          <div className="space-y-4 mt-6">
             {options.map((opt, idx) => (
               <button
                 key={idx}
                 onClick={() => submitAndReveal(opt)}
-                disabled={isPaused}
+                disabled={isPaused || eliminatedOptions.includes(opt)}
                 className={`relative w-full p-5 rounded-2xl border-2 text-left font-bold text-lg transition-all duration-300 transform active:scale-[0.98] ${getOptionClass(opt)}`}
               >
                 {opt}
@@ -301,6 +417,32 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
             </button>
             <button onClick={acceptCall} className="w-full py-3 text-gray-400 font-bold uppercase tracking-wider text-sm hover:text-white transition-colors">
               Accept the call ({varCountdown}s)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ——— Second Wind overlay ——— */}
+      {secondChancePrompt && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+          <div className="w-full max-w-sm glass-panel border-pink-400/50 p-7 text-center animate-float-up">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Heart className="w-6 h-6 text-pink-400 animate-pulse" fill="currentColor" />
+              <p className="text-pink-300 font-black uppercase tracking-widest text-lg">Second Wind</p>
+            </div>
+            <h3 className="text-xl font-black text-white uppercase tracking-wide mb-2">Incorrect Answer!</h3>
+            <p className="text-sm text-gray-300 font-medium mb-5">
+              You picked wrong, but you can use <span className="text-pink-300 font-black">1 Second Wind</span> to
+              eliminate your wrong choice and try again.
+            </p>
+            <button
+              onClick={acceptSecondChance}
+              className="w-full py-4 mb-3 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 text-white font-black text-lg uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(244,114,182,0.4)]"
+            >
+              <Heart className="w-5 h-5" fill="currentColor" /> Try Again! (×{secondChances})
+            </button>
+            <button onClick={declineSecondChance} className="w-full py-3 text-gray-400 font-bold uppercase tracking-wider text-sm hover:text-white transition-colors">
+              Accept defeat
             </button>
           </div>
         </div>

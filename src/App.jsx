@@ -181,9 +181,14 @@ const App = () => {
       const newTotalFP = Math.max(0, (userData?.fp || 0) + fpChange + (milestone?.fp || 0));
 
       // Every completed match earns a free Bronze Pack; milestones add more.
-      const packGrants = { bronze: 1, gold: 0, legendary: 0 };
-      if (milestone?.packs) {
-        for (const [type, n] of Object.entries(milestone.packs)) packGrants[type] += n;
+      const packGrants = { bronze: 1 };
+      if (milestone?.packs?.bronze) {
+        packGrants.bronze += milestone.packs.bronze;
+      }
+
+      const consumableGrants = { hints: 0, extraTime: 0, secondChances: 0 };
+      if (milestone?.consumables) {
+        for (const [type, n] of Object.entries(milestone.consumables)) consumableGrants[type] += n;
       }
 
       let newUserData = {
@@ -195,8 +200,9 @@ const App = () => {
         bestStreak: Math.max(userData?.bestStreak || 0, newStreak),
         streakFreezes: Math.max(0, (userData?.streakFreezes || 0) - (usedFreeze ? 1 : 0)),
         packBronze: (userData?.packBronze || 0) + packGrants.bronze,
-        packGold: (userData?.packGold || 0) + packGrants.gold,
-        packLegendary: (userData?.packLegendary || 0) + packGrants.legendary
+        hints: (userData?.hints || 0) + consumableGrants.hints,
+        extraTime: (userData?.extraTime || 0) + consumableGrants.extraTime,
+        secondChances: (userData?.secondChances || 0) + consumableGrants.secondChances
       };
 
       if (finalScore === 10) {
@@ -225,8 +231,9 @@ const App = () => {
           bestStreak: newUserData.bestStreak,
           streakFreezes: newUserData.streakFreezes,
           packBronze: newUserData.packBronze,
-          packGold: newUserData.packGold,
-          packLegendary: newUserData.packLegendary,
+          hints: newUserData.hints,
+          extraTime: newUserData.extraTime,
+          secondChances: newUserData.secondChances,
           perfectMatchesCount: newUserData.perfectMatchesCount || 0,
           badges: newUserData.badges || []
         });
@@ -472,6 +479,19 @@ const App = () => {
               varTokens={userData?.varTokens || 0}
               varUsed={varUsedThisMatch}
               onUseVar={handleUseVar}
+              hints={userData?.hints || 0}
+              extraTime={userData?.extraTime || 0}
+              secondChances={userData?.secondChances || 0}
+              onUseConsumable={async (field) => {
+                const { consumeConsumable } = await import('./utils/economyService');
+                const partial = await consumeConsumable(currentUser.uid, userData, field);
+                mergeUserData(partial);
+              }}
+              onOverrideAnswer={(qid) => {
+                try {
+                  localStorage.setItem(`wc_var_${dailyQuiz.date}`, qid);
+                } catch {}
+              }}
               t={t}
               currentStreak={matchStats.currentStreak}
             />

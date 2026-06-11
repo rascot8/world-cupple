@@ -262,11 +262,9 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
         </section>
 
         {/* Open-now shortcut when packs are sitting in the inventory */}
-        {(['bronze', 'gold', 'legendary'].some((p) => (userData?.[`pack${p[0].toUpperCase()}${p.slice(1)}`] || 0) > 0)) && (
+        {(userData?.packBronze || 0) > 0 && (
           <button
-            onClick={() => onOpenPack(
-              (userData?.packLegendary || 0) > 0 ? 'legendary' : (userData?.packGold || 0) > 0 ? 'gold' : 'bronze'
-            )}
+            onClick={() => onOpenPack('bronze')}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black font-black text-lg uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform"
           >
             🎁 You have unopened packs — rip one now!
