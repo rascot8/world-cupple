@@ -14,14 +14,15 @@ export const AudioProvider = ({ children, gameState }) => {
   });
 
   // Audio refs
-  const menuBgmRef = useRef(new Audio('/audio/menu_bgm.mp3'));
-  const quizBgmRef = useRef(new Audio('/audio/quiz_bgm.mp3'));
-  const correctSfxRef = useRef(new Audio('/audio/correct.mp3'));
-  const wrongSfxRef = useRef(new Audio('/audio/wrong.mp3'));
-  const gainSfxRef = useRef(new Audio('/audio/gain_fp.mp3'));
-  const lossSfxRef = useRef(new Audio('/audio/gain_fp.mp3'));
-  const kickoffRef = useRef(new Audio('/audio/kickoff.mp3'));
-  const whistleRef = useRef(new Audio('/audio/whistle.mp3'));
+  const basePath = import.meta.env.BASE_URL;
+  const menuBgmRef = useRef(new Audio(`${basePath}audio/menu_bgm.mp3`));
+  const quizBgmRef = useRef(new Audio(`${basePath}audio/quiz_bgm.mp3`));
+  const correctSfxRef = useRef(new Audio(`${basePath}audio/correct.mp3`));
+  const wrongSfxRef = useRef(new Audio(`${basePath}audio/wrong.mp3`));
+  const gainSfxRef = useRef(new Audio(`${basePath}audio/gain_fp.mp3`));
+  const lossSfxRef = useRef(new Audio(`${basePath}audio/gain_fp.mp3`));
+  const kickoffRef = useRef(new Audio(`${basePath}audio/kickoff.mp3`));
+  const whistleRef = useRef(new Audio(`${basePath}audio/whistle.mp3`));
 
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
