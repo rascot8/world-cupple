@@ -104,7 +104,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
     <div className="min-h-screen flex flex-col items-center justify-center p-6 pb-20 relative overflow-hidden">
       <WelcomeModal onClose={() => setShowWelcomeModal(false)} forceShow={showWelcomeModal} />
 
-      <div className="absolute top-6 right-6 flex items-center space-x-4">
+      <div className="absolute top-6 right-6 z-50 flex items-center space-x-4">
         {userData?.isAdmin && (
           <button onClick={() => { window.location.href = `${import.meta.env.BASE_URL}admin`; }} title="Quiz Admin" className="text-fifa-neon hover:text-white transition-colors">
             <Shield className="w-6 h-6" />

@@ -7,7 +7,7 @@ const BrandHeader = ({ isHero = false }) => {
       <img
         src={logo}
         alt="Trivia World Cup 2026"
-        className="w-64 md:w-80 mx-auto mb-10 z-20"
+        className="w-64 md:w-80 mx-auto mb-10 z-0 pointer-events-none"
       />
     );
   }
