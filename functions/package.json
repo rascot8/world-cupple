@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for Match Day Picks (placePick + settlePick)",
+  "description": "Cloud Functions for Match Day Picks (placePick + settlePick) and Stripe coin crediting (stripeWebhook)",
   "private": true,
   "main": "index.js",
   "engines": {
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "firebase-admin": "^12.6.0",
-    "firebase-functions": "^6.1.0"
+    "firebase-functions": "^6.1.0",
+    "stripe": "^17.5.0"
   }
 }

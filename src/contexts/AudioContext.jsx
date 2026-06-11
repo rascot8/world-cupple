@@ -50,7 +50,7 @@ export const AudioProvider = ({ children, gameState }) => {
 
   // Handle BGM switching based on gamestate
   useEffect(() => {
-    const playMenu = ['auth', 'dashboard', 'results', 'leaderboard'].includes(gameState);
+    const playMenu = ['auth', 'dashboard', 'results', 'leaderboard', 'store', 'album'].includes(gameState);
     const playQuiz = ['playing', 'practice'].includes(gameState);
     const playKickoffState = ['kickoff_daily', 'kickoff_practice'].includes(gameState);
 
@@ -102,7 +102,7 @@ export const AudioProvider = ({ children, gameState }) => {
       }
     }
 
-    const playMenu = ['auth', 'dashboard', 'results', 'leaderboard'].includes(gameState);
+    const playMenu = ['auth', 'dashboard', 'results', 'leaderboard', 'store', 'album'].includes(gameState);
     const audioEl = playMenu ? menuBgmRef.current : quizBgmRef.current;
     
     const activeVolume = forceVolume !== null ? forceVolume : volume;

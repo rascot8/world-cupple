@@ -39,6 +39,7 @@ const HelpModal = ({ onClose }) => {
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Daily Match Logic</h3>
             <p className="text-sm text-gray-300 mb-4 leading-relaxed">
               Every day, you play a 10-question match. Your score strictly dictates how many Football Points (FP) you gain or lose. You cannot drop below 0 FP.
+              Captain’s Club members earn <span className="text-yellow-300 font-bold">+50%</span> on positive results.
             </p>
             <div className="grid grid-cols-2 gap-2 text-sm font-bold">
               <div className="bg-white/5 text-gold-glow p-2 rounded-lg text-center font-bold border border-white/10">10/10: +50 FP</div>
@@ -53,6 +54,42 @@ const HelpModal = ({ onClose }) => {
               <div className="bg-red-500/10 text-red-400 p-2 rounded-lg text-center">1/10: -40 FP</div>
               <div className="bg-red-500/20 border border-red-500/20 text-red-500 p-2 rounded-lg text-center col-span-2">0/10: -50 FP</div>
             </div>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">🔥 Daily Streaks</h3>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              Play every day to grow your streak. Milestone days (3, 7, 14, 21, 30…) pay out bonus FP,
+              CupCoins and sticker packs. Miss a day and the streak resets — unless a
+              <span className="text-sky-300 font-bold"> 🛡️ Streak Shield</span> from the store saves it automatically.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">📔 Legends Album & Packs</h3>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              Collect all 64 stickers across 6 pages. Every completed Daily Match earns a free
+              <span className="text-amber-400 font-bold"> 📦 Bronze Pack</span>; Gold and Legendary packs come from the store.
+              Duplicates convert to FP automatically, completed pages pay CupCoins, and a Legendary is
+              guaranteed at least every 10 packs.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">📺 VAR Review</h3>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              Holding a VAR Token? When you get an answer wrong, the referee checks the monitor —
+              spend one token to overturn the call and keep your point. Once per match.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">🪙 CupCoins & Captain’s Club</h3>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              CupCoins are the premium currency: earn a trickle from daily matches and album pages, or
+              grab bundles in the store. The <span className="text-yellow-300 font-bold">⭐ Captain’s Club</span> season pass
+              adds a claimable Gold Pack every day, +50% FP on wins, 2× duplicate value and gold flair on the leaderboard.
+            </p>
           </section>
 
         </div>

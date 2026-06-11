@@ -12,6 +12,7 @@ export const BADGES = [
   { id: 'hat_trick', tier: 'BRONZE', name: 'Hat Trick', description: 'Achieve a streak of 3 correct answers.' },
   { id: 'clean_sheet', tier: 'BRONZE', name: 'Clean Sheet', description: 'Get 10/10 in an Unranked Practice match.' },
   { id: 'squad_player', tier: 'BRONZE', name: 'Squad Player', description: 'Invite 1 friend via your invite link.' },
+  { id: 'first_pack', tier: 'BRONZE', name: 'Pack Animal', description: 'Open your first sticker pack.' },
 
   // SILVER TIER
   { id: 'group_stage', tier: 'SILVER', name: 'Group Stage', description: 'Play the Daily Match for 7 consecutive days.' },
@@ -19,6 +20,7 @@ export const BADGES = [
   { id: 'playmaker', tier: 'SILVER', name: 'Playmaker', description: 'Invite 3 friends via your invite link.' },
   { id: 'midfield_maestro', tier: 'SILVER', name: 'Midfield Maestro', description: 'Reach the Silver Rank.' },
   { id: 'derby_winner', tier: 'SILVER', name: 'Derby Winner', description: 'Score higher than a friend on the Friends Leaderboard.' },
+  { id: 'page_turner', tier: 'SILVER', name: 'Page Turner', description: 'Complete a full page of the Legends Album.' },
 
   // GOLD TIER
   { id: 'knockout_stage', tier: 'GOLD', name: 'Knockout Stage', description: 'Play the Daily Match for 15 consecutive days.' },
@@ -26,13 +28,16 @@ export const BADGES = [
   { id: 'captains_armband', tier: 'GOLD', name: 'Captain\'s Armband', description: 'Reach the Gold Rank.' },
   { id: 'global_scout', tier: 'GOLD', name: 'Global Scout', description: 'Invite 5 friends via your invite link.' },
   { id: 'top_bins', tier: 'GOLD', name: 'Top Bins', description: 'Answer a question correctly in under 3 seconds.' },
+  { id: 'shiny_hunter', tier: 'GOLD', name: 'Shiny Hunter', description: 'Own 3 Legendary stickers.' },
+  { id: 'captains_club', tier: 'GOLD', name: "Captain's Club", description: "Join the Captain's Club." },
 
   // DIAMOND TIER
   { id: 'world_champion', tier: 'DIAMOND', name: 'World Champion', description: 'Reach the top "World Class" Rank.' },
   { id: 'invincible', tier: 'DIAMOND', name: 'Invincible', description: 'Play the Daily Match for 30 consecutive days.' },
   { id: 'ballon_dor', tier: 'DIAMOND', name: 'Ballon d\'Or', description: 'Reach the Top 50 on the Global Leaderboard.' },
   { id: 'golden_glove', tier: 'DIAMOND', name: 'Golden Glove', description: 'Achieve five "Perfect 10" Daily Matches.' },
-  { id: 'legendary_status', tier: 'DIAMOND', name: 'Legendary Status', description: 'Accumulate 5,000 Total Football Points (FP).' }
+  { id: 'legendary_status', tier: 'DIAMOND', name: 'Legendary Status', description: 'Accumulate 5,000 Total Football Points (FP).' },
+  { id: 'the_collector', tier: 'DIAMOND', name: 'The Collector', description: 'Complete all 64 stickers in the Legends Album.' }
 ];
 
 export const evaluateAchievements = (userData, matchData) => {

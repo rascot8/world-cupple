@@ -46,6 +46,47 @@
   66% { transform: translate(-70%, -30%) scale(0.9); opacity: 0.6; }
 }
 
+@keyframes foil-shimmer {
+  0% { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+
+@keyframes ticker-in {
+  0% { transform: translateY(110%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes coin-pop {
+  0% { transform: scale(0.4) translateY(8px); opacity: 0; }
+  55% { transform: scale(1.25) translateY(-2px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes pack-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-3deg) scale(1.02); }
+  40% { transform: rotate(3deg) scale(1.04); }
+  60% { transform: rotate(-2deg) scale(1.02); }
+  80% { transform: rotate(2deg) scale(1.01); }
+}
+
+@keyframes legendary-rays {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { transform: rotate(180deg) scale(1.15); opacity: 0.7; }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 8px rgba(250, 204, 21, 0.25); }
+  50% { box-shadow: 0 0 22px rgba(250, 204, 21, 0.55); }
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); }
+  30% { transform: scale(1.12) rotate(2deg); }
+  60% { transform: scale(0.96) rotate(-1deg); }
+}
+
 @layer utilities {
   .text-gold-glow {
     @apply text-transparent bg-clip-text bg-gradient-to-r from-[#f1dd71] from-20% to-[#dc9d5d] to-80%;
@@ -53,6 +94,32 @@
   .glass-panel {
     @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl;
   }
+  /* Animated gold-foil surface for legendary stickers */
+  .foil-legendary {
+    background:
+      linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.45) 48%, rgba(255, 230, 120, 0.6) 52%, transparent 70%),
+      linear-gradient(160deg, #7a5a14 0%, #b8860b 25%, #ffd700 50%, #b8860b 75%, #7a5a14 100%);
+    background-size: 300% 100%, 100% 100%;
+    animation: foil-shimmer 2.8s linear infinite;
+  }
+  .foil-shimmer-text {
+    background: linear-gradient(110deg, #facc15 35%, #fff7cc 50%, #facc15 65%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: foil-shimmer 2.2s linear infinite;
+  }
+  .perspective-1000 { perspective: 1000px; }
+  .preserve-3d { transform-style: preserve-3d; }
+  .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .rotate-y-180 { transform: rotateY(180deg); }
+  .animate-ticker-in { animation: ticker-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  .animate-coin-pop { animation: coin-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .animate-pack-wiggle { animation: pack-wiggle 1.6s ease-in-out infinite; }
+  .animate-legendary-rays { animation: legendary-rays 4s linear infinite; }
+  .animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
+  .animate-flame-flicker { animation: flame-flicker 0.9s ease-in-out infinite; }
   .animate-pulse-glow-green {
     animation: pulse-glow-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }

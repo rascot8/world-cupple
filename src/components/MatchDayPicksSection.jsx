@@ -5,7 +5,7 @@ import { fetchUserPicks } from '../utils/picksService';
 import { formatOdds, potentialWin } from '../utils/picks';
 
 // Dashboard section: the player's wagers. Pending picks (awaiting the match)
-// show the stake and potential swing; settled picks show the RP result. Renders
+// show the stake and potential swing; settled picks show the FP result. Renders
 // nothing for players who've never made a pick, so it stays out of the way.
 const MatchDayPicksSection = () => {
   const [picks, setPicks] = useState(null);
@@ -44,9 +44,9 @@ const MatchDayPicksSection = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="font-bold text-white">{p.choice}</span>
-                <span className="text-xs font-bold text-gray-300 tabular-nums">{p.stake} RP @ {formatOdds(p.odds)}</span>
+                <span className="text-xs font-bold text-gray-300 tabular-nums">{p.stake} FP @ {formatOdds(p.odds)}</span>
               </div>
-              <p className="text-[11px] text-fifa-green font-bold mt-1">To win +{potentialWin(p.stake, p.odds)} RP</p>
+              <p className="text-[11px] text-fifa-green font-bold mt-1">To win +{potentialWin(p.stake, p.odds)} FP</p>
             </div>
           ))}
         </div>
@@ -68,9 +68,9 @@ const MatchDayPicksSection = () => {
                     {isVoid ? (
                       <><RotateCcw className="w-3.5 h-3.5" /> Void</>
                     ) : s.won ? (
-                      <><TrendingUp className="w-3.5 h-3.5" /> +{delta} RP</>
+                      <><TrendingUp className="w-3.5 h-3.5" /> +{delta} FP</>
                     ) : (
-                      <><TrendingDown className="w-3.5 h-3.5" /> {delta} RP</>
+                      <><TrendingDown className="w-3.5 h-3.5" /> {delta} FP</>
                     )}
                   </span>
                 </div>

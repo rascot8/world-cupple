@@ -137,6 +137,31 @@ const DancingBackground = () => {
     };
     window.addEventListener('streak-fire', handleStreakFire);
 
+    // Celebration confetti: paper rains from the top with gravity + sway.
+    // Fired for legendary pulls, purchases, milestones, page completions.
+    let confettiParticles = [];
+    const FESTIVE = ['#39FF14', '#1DB954', '#FF4D6D', '#4DA6FF', '#FFD700', '#FF8C42', '#E040FB', '#FFFFFF'];
+    const GOLDS = ['#FFD700', '#FFC107', '#FFE082', '#F9A825', '#FFF8E1'];
+    const handleConfetti = (e) => {
+      const count = Math.min(e.detail?.count || 80, 200);
+      const palette = e.detail?.gold ? GOLDS : FESTIVE;
+      for (let i = 0; i < count; i++) {
+        confettiParticles.push({
+          x: Math.random() * window.innerWidth,
+          y: -20 - Math.random() * window.innerHeight * 0.3,
+          vx: (Math.random() - 0.5) * 2.5,
+          vy: 2 + Math.random() * 3.5,
+          size: 3 + Math.random() * 5,
+          swayOffset: Math.random() * Math.PI * 2,
+          rot: Math.random() * Math.PI,
+          vrot: (Math.random() - 0.5) * 0.25,
+          color: palette[Math.floor(Math.random() * palette.length)],
+          life: 1
+        });
+      }
+    };
+    window.addEventListener('confetti-burst', handleConfetti);
+
     initCanvas();
     initParticles();
 
@@ -308,7 +333,28 @@ const DancingBackground = () => {
         ctx.globalCompositeOperation = 'source-over';
         sparkParticles = sparkParticles.filter(p => p.life > 0);
       }
-      
+
+      // Render confetti (rotating paper rectangles with gravity)
+      if (confettiParticles.length > 0) {
+        confettiParticles.forEach((p) => {
+          p.x += p.vx + Math.sin(Date.now() * 0.002 + p.swayOffset) * 1.2;
+          p.y += p.vy;
+          p.vy += 0.04; // gravity
+          p.rot += p.vrot;
+          if (p.y > height * 0.75) p.life -= 0.03;
+          if (p.life <= 0) return;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+          ctx.restore();
+        });
+        confettiParticles = confettiParticles.filter((p) => p.life > 0 && p.y < height + 30);
+      }
+
       // Reset global states
       ctx.globalAlpha = 1.0;
       ctx.shadowBlur = 0;
@@ -321,6 +367,7 @@ const DancingBackground = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('streak-fire', handleStreakFire);
+      window.removeEventListener('confetti-burst', handleConfetti);
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
   }, [getAudioData]);

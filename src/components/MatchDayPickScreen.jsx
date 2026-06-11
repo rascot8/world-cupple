@@ -6,7 +6,7 @@ import QuitModal from './QuitModal';
 import { formatOdds, potentialWin, isBettingClosed } from '../utils/picks';
 
 // A Match Day Pick inside the daily quiz: no known answer, no timer. The player
-// wagers RP on an outcome and checks back after the match. Placing the wager
+// wagers FP on an outcome and checks back after the match. Placing the wager
 // goes through the placePick Cloud Function (escrow + odds snapshot server-side).
 const QUICK_STAKES = [25, 50, 100];
 
@@ -59,18 +59,18 @@ const MatchDayPickScreen = ({ question, balance, onPlacePick, onDone, onForfeit,
             <Lock className="w-10 h-10 text-fifa-neon" />
           </div>
           <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Pick Locked!</h2>
-          <p className="text-gray-400 mb-6">Check back after <span className="text-white font-bold">{question.fixture || 'the match'}</span> to see your RP.</p>
+          <p className="text-gray-400 mb-6">Check back after <span className="text-white font-bold">{question.fixture || 'the match'}</span> to see your FP.</p>
 
           <div className="glass-panel p-6 w-full mb-8">
             <p className="text-sm text-gray-400 mb-3">{question.text}</p>
             <p className="text-xl font-black text-fifa-neon mb-4">{placed.choice}</p>
             <div className="flex justify-between text-sm border-t border-white/10 pt-4">
               <span className="text-gray-400 font-bold">Staked</span>
-              <span className="text-white font-black tabular-nums">{placed.stake} RP @ {formatOdds(placed.odds)}</span>
+              <span className="text-white font-black tabular-nums">{placed.stake} FP @ {formatOdds(placed.odds)}</span>
             </div>
             <div className="flex justify-between text-sm mt-2">
               <span className="text-gray-400 font-bold">To win</span>
-              <span className="text-fifa-green font-black tabular-nums">+{potentialWin(placed.stake, placed.odds)} RP</span>
+              <span className="text-fifa-green font-black tabular-nums">+{potentialWin(placed.stake, placed.odds)} FP</span>
             </div>
           </div>
 
@@ -117,7 +117,7 @@ const MatchDayPickScreen = ({ question, balance, onPlacePick, onDone, onForfeit,
         <h2 className="text-3xl font-black text-white leading-tight text-center mb-3">{question.text}</h2>
         <div className="flex items-center justify-center gap-2 mb-6">
           <Trophy className="w-4 h-4 text-gold-glow" />
-          <span className="text-sm font-bold text-gold-glow tabular-nums">{balance} RP available</span>
+          <span className="text-sm font-bold text-gold-glow tabular-nums">{balance} FP available</span>
         </div>
 
         {closed ? (
@@ -150,7 +150,7 @@ const MatchDayPickScreen = ({ question, balance, onPlacePick, onDone, onForfeit,
 
             {/* Stake control */}
             {broke ? (
-              <p className="text-center text-sm text-gray-400 font-bold mb-4">You have no RP to wager right now.</p>
+              <p className="text-center text-sm text-gray-400 font-bold mb-4">You have no FP to wager right now.</p>
             ) : (
               <div className="glass-panel p-4 mb-4">
                 <div className="flex items-center justify-between mb-3">
@@ -165,7 +165,7 @@ const MatchDayPickScreen = ({ question, balance, onPlacePick, onDone, onForfeit,
                       placeholder="0"
                       className="w-24 p-2 rounded-lg bg-black/40 border border-white/15 text-white text-right font-black tabular-nums focus:outline-none focus:border-fifa-neon"
                     />
-                    <span className="text-xs font-bold text-gray-400">RP</span>
+                    <span className="text-xs font-bold text-gray-400">FP</span>
                   </div>
                 </div>
                 <div className="flex gap-2">

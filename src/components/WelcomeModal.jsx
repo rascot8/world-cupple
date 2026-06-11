@@ -66,13 +66,28 @@ const WelcomeModal = ({ onClose, forceShow = false }) => {
 
             <div className="flex items-start">
               <div className="bg-white/10 p-2 rounded-lg mr-4 mt-1">
+                <span className="text-lg leading-none">📔</span>
+              </div>
+              <div>
+                <h3 className="text-white font-bold tracking-wider uppercase text-sm mb-1">Fill the Legends Album</h3>
+                <p className="text-sm text-gray-400">Every match earns a free sticker pack. Collect all 64 legends, moments and stars of ’26.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start">
+              <div className="bg-white/10 p-2 rounded-lg mr-4 mt-1">
                 <Globe2 className="w-5 h-5 text-blue-400" />
               </div>
               <div>
                 <h3 className="text-white font-bold tracking-wider uppercase text-sm mb-1">Build Your Legacy</h3>
-                <p className="text-sm text-gray-400">Dominate global leaderboards, unlock exclusive badges, and keep your answer streak alive.</p>
+                <p className="text-sm text-gray-400">Dominate global leaderboards, unlock exclusive badges, and keep your daily streak alive.</p>
               </div>
             </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-yellow-300/10 to-amber-500/10 border border-yellow-400/40 text-center">
+            <p className="text-sm font-black text-yellow-300 uppercase tracking-wider mb-1">🎁 Welcome Gift</p>
+            <p className="text-xs text-gray-300 font-bold">100 CupCoins + 1 Bronze Pack are waiting in your account!</p>
           </div>
         </div>
 
@@ -81,7 +96,7 @@ const WelcomeModal = ({ onClose, forceShow = false }) => {
             onClick={handleClose}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black font-black uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform"
           >
-            Let's Kick Off!
+            Let’s Kick Off!
           </button>
           <button 
             onClick={handleDoNotShowAgain}

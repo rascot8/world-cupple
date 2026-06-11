@@ -24,7 +24,7 @@ const TrophyCabinetModal = ({ onClose, userData }) => {
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           <div className="mb-6 flex justify-between items-center px-2">
             <span className="text-gray-400 text-sm font-bold uppercase tracking-widest">Progress</span>
-            <span className="text-fifa-neon font-black text-xl">{unlockedBadges.length} / 20</span>
+            <span className="text-fifa-neon font-black text-xl">{unlockedBadges.length} / {BADGES.length}</span>
           </div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">

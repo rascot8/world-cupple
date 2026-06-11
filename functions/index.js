@@ -18,7 +18,7 @@
  *   lose  -> credit 0                              => net -S
  *   void  -> credit S      (stake refunded)        => net  0
  */
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
@@ -184,3 +184,80 @@ exports.settlePick = onCall(async (request) => {
 
   return { ok: true, settled, skipped, total: picks.size };
 });
+
+/**
+ * Stripe webhook — the production path for CupCoin purchases.
+ *
+ * Setup:
+ *  1. Create a Stripe Payment Link per bundle; set the client app's
+ *     VITE_STRIPE_LINK_{STARTER|FAN|PRO|LEGEND} env vars to those URLs.
+ *     The app appends ?client_reference_id={uid} when opening the link.
+ *  2. Point a Stripe webhook (event: checkout.session.completed) at this
+ *     function's URL and set the secrets:
+ *       firebase functions:secrets:set STRIPE_SECRET_KEY
+ *       firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
+ *  3. In each Payment Link's metadata set `coins` to the amount to credit
+ *     (remember the in-app "first buy ×2" is a client-side display promise —
+ *     either bake it into metadata or ignore it for Stripe purchases).
+ *
+ * Crediting is idempotent: each Stripe session id is recorded under
+ * purchases/{sessionId} and never paid twice. Without the secrets configured
+ * the endpoint answers 503 and does nothing — the in-app sandbox checkout
+ * keeps working regardless.
+ */
+exports.stripeWebhook = onRequest(
+  { secrets: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'] },
+  async (req, res) => {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!secretKey || !webhookSecret) {
+      res.status(503).send('Stripe is not configured.');
+      return;
+    }
+
+    const stripe = require('stripe')(secretKey);
+
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.rawBody, req.headers['stripe-signature'], webhookSecret);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err.message);
+      res.status(400).send('Bad signature.');
+      return;
+    }
+
+    if (event.type !== 'checkout.session.completed') {
+      res.json({ received: true, ignored: event.type });
+      return;
+    }
+
+    const session = event.data.object;
+    const uid = session.client_reference_id;
+    const coins = Math.floor(Number(session.metadata && session.metadata.coins));
+
+    if (!uid || !Number.isFinite(coins) || coins <= 0) {
+      console.error('Session missing uid or coins metadata:', session.id);
+      res.status(200).json({ received: true, credited: false });
+      return;
+    }
+
+    const purchaseRef = db.doc(`purchases/${session.id}`);
+    const userRef = db.doc(`users/${uid}`);
+
+    await db.runTransaction(async (tx) => {
+      const [purchaseSnap, userSnap] = await Promise.all([tx.get(purchaseRef), tx.get(userRef)]);
+      if (purchaseSnap.exists) return; // already credited — never double-pay
+      const balance = Number((userSnap.exists && userSnap.data().coins) || 0);
+      tx.set(userRef, { coins: balance + coins }, { merge: true });
+      tx.set(purchaseRef, {
+        uid,
+        coins,
+        amountTotal: session.amount_total,
+        currency: session.currency,
+        creditedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    });
+
+    res.json({ received: true, credited: true });
+  }
+);
