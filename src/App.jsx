@@ -270,7 +270,7 @@ const App = () => {
       }
 
       // Resume where the player left off (answers are immutable, no replays).
-      const submitted = await fetchTodaySubmissions(currentUser.uid, quiz.date);
+      const submitted = userData?.isAdmin ? {} : await fetchTodaySubmissions(currentUser.uid, quiz.date);
       // A VAR overturn is client-side scoring sugar — restore it on resume.
       const varCredit = localStorage.getItem(`wc_var_${quiz.date}`);
       setVarUsedThisMatch(!!varCredit);
@@ -473,6 +473,7 @@ const App = () => {
               varUsed={varUsedThisMatch}
               onUseVar={handleUseVar}
               t={t}
+              currentStreak={matchStats.currentStreak}
             />
           )
         ) : (

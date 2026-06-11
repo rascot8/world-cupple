@@ -42,7 +42,7 @@ const KickoffScreen = ({ onFinish }) => {
           Get Ready!
         </h1>
 
-        <div className="w-32 h-32 rounded-full border-4 border-fifa-neon flex items-center justify-center bg-black/50 backdrop-blur-md shadow-[0_0_12px_rgba(57,255,20,0.16)]">
+        <div className="w-32 h-32 rounded-full border-4 border-fifa-neon flex items-center justify-center bg-black/80 shadow-[0_0_12px_rgba(57,255,20,0.16)]">
           <span className="text-6xl font-black text-white">{countdown}</span>
         </div>
 

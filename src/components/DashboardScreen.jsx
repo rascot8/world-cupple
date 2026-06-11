@@ -34,7 +34,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
   const [claimingVip, setClaimingVip] = useState(false);
 
   const today = getTodayUTCString();
-  const hasPlayedToday = userData?.lastPlayedDate === today;
+  const hasPlayedToday = userData?.lastPlayedDate === today && !userData?.isAdmin;
   const rank = getRankForFP(userData?.fp || 0);
   const streak = userData?.playStreak || 0;
   const dots = weekDots(userData, today);

@@ -12,14 +12,14 @@ import QuitModal from './QuitModal';
 // from the store; this is the mid-match monetization hook.
 const VAR_DECISION_SECONDS = 7;
 
-const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, t }) => {
+const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, t, currentStreak = 0 }) => {
   const { playCorrect, playWrong, playGain } = useAudio();
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
   const [correctAnswer, setCorrectAnswer] = useState(null);
   const [timeLeft, setTimeLeft] = useState(15);
   const [isPaused, setIsPaused] = useState(false);
-  const [streak, setStreak] = useState(0);
+  const [streak, setStreak] = useState(currentStreak);
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [varPrompt, setVarPrompt] = useState(false);
   const [varCountdown, setVarCountdown] = useState(VAR_DECISION_SECONDS);
@@ -44,7 +44,8 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     setOverturned(false);
     varDecidedRef.current = false;
     submittedRef.current = false;
-  }, [question]);
+    setStreak(currentStreak);
+  }, [question, currentStreak]);
 
   useEffect(() => {
     if (timeLeft > 0 && !isPaused) {
