@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { calculateDailyFPChange, getRankForFP } from '../utils/ranking';
 import { Trophy, Info } from 'lucide-react';
 import { getFlagForCountry } from '../utils/countries';
-import RankModal from './RankModal';
+import HelpModal from './HelpModal';
 import SharePromptModal from './SharePromptModal';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
@@ -11,7 +11,7 @@ import BrandHeader from './BrandHeader';
 const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
   const { t } = useTranslation();
   const { playGain, playLoss } = useAudio();
-  const [showRankModal, setShowRankModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showSharePrompt, setShowSharePrompt] = useState(false);
   const [animatedWidth, setAnimatedWidth] = useState(0);
   const [showFloatingText, setShowFloatingText] = useState(false);
@@ -89,7 +89,7 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
 
       <BrandHeader isHero={false} />
 
-      <button onClick={() => setShowRankModal(true)} className="absolute top-6 right-6 z-10 text-gray-400 hover:text-white transition-colors">
+      <button onClick={() => setShowHelpModal(true)} className="absolute top-6 right-6 z-10 text-gray-400 hover:text-white transition-colors">
         <Info className="w-6 h-6" />
       </button>
 
@@ -167,7 +167,7 @@ const ResultsScreen = ({ score, total, totalFP, userData, onRestart }) => {
         </button>
       </div>
 
-      {showRankModal && <RankModal onClose={() => setShowRankModal(false)} />}
+      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
       {showSharePrompt && <SharePromptModal score={score} total={total} onClose={() => setShowSharePrompt(false)} />}
     </div>
   );

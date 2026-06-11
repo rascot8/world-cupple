@@ -40,7 +40,7 @@ const TrophyCabinetModal = ({ onClose, userData }) => {
                 >
                   <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 transition-all duration-300 transform group-hover:scale-110
                     ${isUnlocked 
-                      ? `bg-gradient-to-br ${tierInfo.color} ${tierInfo.shadow} shadow-[0_0_15px_rgba(255,255,255,0.1)] border border-white/20` 
+                      ? `bg-gradient-to-br ${tierInfo.color} ${tierInfo.shadow} shadow-[0_0_6px_rgba(255,255,255,0.04)] border border-white/20` 
                       : 'bg-gray-800 border-2 border-gray-600 grayscale opacity-70'}
                   `}>
                     {!isUnlocked && <Lock className="w-6 h-6 text-gray-500" />}

@@ -26,7 +26,7 @@ const QuitModal = ({ onConfirm, onCancel, isPractice = false }) => {
         <div className="flex flex-col space-y-3">
           <button 
             onClick={onConfirm}
-            className="w-full py-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-black text-lg uppercase tracking-wider transition-colors shadow-[0_0_15px_rgba(239,68,68,0.3)]"
+            className="w-full py-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-black text-lg uppercase tracking-wider transition-colors shadow-[0_0_6px_rgba(239,68,68,0.12)]"
           >
             {isPractice ? 'Quit Practice' : 'Forfeit Match'}
           </button>

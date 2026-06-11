@@ -88,11 +88,11 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     }
 
     if (opt === correctAnswer) {
-      return 'bg-green-500 text-white border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]';
+      return 'bg-green-500 text-white border-green-500 shadow-[0_0_8px_rgba(34,197,94,0.2)]';
     }
 
     if (opt === selectedOption && opt !== correctAnswer) {
-      return 'bg-red-500 text-white border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]';
+      return 'bg-red-500 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.2)]';
     }
 
     return 'bg-white/5 border-white/10 opacity-50';
@@ -124,9 +124,9 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
               <div 
                 className={`px-4 py-2 rounded-full font-black flex items-center transition-all duration-300 ${
                   streak >= 7 
-                    ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white animate-shake-fire scale-125 shadow-[0_0_30px_rgba(239,68,68,0.8)] ml-4 border-2 border-yellow-300' 
+                    ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white animate-shake-fire scale-125 shadow-[0_0_12px_rgba(239,68,68,0.32)] ml-4 border-2 border-yellow-300' 
                     : streak >= 3 
-                      ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.6)]' 
+                      ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.24)]' 
                       : 'bg-white/10 text-orange-400'
                 }`}
               >

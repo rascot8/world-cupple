@@ -6,9 +6,12 @@ import { auth, db } from '../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Trophy, Settings, BarChart2, Info, Share2, Target, Award, Shield } from 'lucide-react';
 import { COUNTRIES, getFlagForCountry } from '../utils/countries';
-import RankModal from './RankModal';
+import HelpModal from './HelpModal';
 import SettingsModal from './SettingsModal';
 import TrophyCabinetModal from './TrophyCabinetModal';
+import ProfileDropdown from './ProfileDropdown';
+import ProfileModal from './ProfileModal';
+import WelcomeModal from './WelcomeModal';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
 import MatchDayPicksSection from './MatchDayPicksSection';
@@ -17,9 +20,11 @@ import { seedFakeUsers } from '../utils/seedFakeUsers';
 const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState('');
-  const [showRankModal, setShowRankModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTrophyCabinet, setShowTrophyCabinet] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [copied, setCopied] = useState(false);
@@ -78,11 +83,16 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
     }
   };
 
+  const handleLogout = () => {
+    if (auth) auth.signOut();
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <WelcomeModal onClose={() => setShowWelcomeModal(false)} forceShow={showWelcomeModal} />
 
       
-      <div className="absolute top-6 right-6 flex space-x-4">
+      <div className="absolute top-6 right-6 flex items-center space-x-4">
         {userData?.isAdmin && (
           <button onClick={() => { window.location.href = `${import.meta.env.BASE_URL}admin`; }} title="Quiz Admin" className="text-fifa-neon hover:text-white transition-colors">
             <Shield className="w-6 h-6" />
@@ -91,27 +101,21 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
         <button onClick={() => setShowTrophyCabinet(true)} className="text-white hover:text-fifa-neon transition-colors">
           <Award className="w-6 h-6" />
         </button>
-        <button onClick={() => setShowRankModal(true)} className="text-gray-400 hover:text-white transition-colors">
-          <Info className="w-6 h-6" />
-        </button>
         <button onClick={onLeaderboard} className="text-white hover:text-fifa-neon transition-colors">
           <BarChart2 className="w-6 h-6" />
         </button>
-        <button onClick={() => setShowSettingsModal(true)} className="text-gray-400 hover:text-white transition-colors">
-          <Settings className="w-6 h-6" />
-        </button>
+        <ProfileDropdown 
+          onOpenProfile={() => setShowProfileModal(true)}
+          onOpenRank={() => setShowHelpModal(true)}
+          onOpenTutorial={() => setShowWelcomeModal(true)}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          onLogout={handleLogout}
+        />
       </div>
 
       <div className="w-full max-w-md z-10 flex flex-col items-center">
         <BrandHeader isHero={true} />
         
-        {userData?.country && userData.country !== 'NONE' && (
-          <div className="mb-4 flex items-center space-x-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
-            <span className="text-xl">{getFlagForCountry(userData.country)}</span>
-            <span className="text-sm font-bold text-gray-300">{userData.username || userData.email?.split('@')[0]}</span>
-          </div>
-        )}
-
         <div className="w-32 h-32 bg-white/5 rounded-full flex flex-col items-center justify-center mb-6 shadow-xl border border-white/10">
           <Trophy className={`w-12 h-12 ${rank.color} mb-2`} />
           <span className={`text-sm font-bold uppercase tracking-widest ${rank.color}`}>
@@ -136,7 +140,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
         ) : (
           <button 
             onClick={onPlay}
-            className="w-full py-5 mb-4 rounded-2xl bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black font-black text-2xl uppercase tracking-wider transform transition-transform hover:scale-[1.02] active:scale-95 shadow-[0_0_40px_rgba(57,255,20,0.3)]"
+            className="w-full py-5 mb-4 rounded-2xl bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black font-black text-2xl uppercase tracking-wider transform transition-transform hover:scale-[1.02] active:scale-95 shadow-[0_0_16px_rgba(57,255,20,0.12)]"
           >
             {t('Play Daily Match')}
           </button>
@@ -161,9 +165,10 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, userData }) => {
 
       </div>
 
-      {showRankModal && <RankModal onClose={() => setShowRankModal(false)} />}
+      {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
       {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} userData={userData} />}
       {showTrophyCabinet && <TrophyCabinetModal onClose={() => setShowTrophyCabinet(false)} userData={userData} />}
+      {showProfileModal && <ProfileModal onClose={() => setShowProfileModal(false)} userData={userData} />}
 
       {showCountrySelect && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">

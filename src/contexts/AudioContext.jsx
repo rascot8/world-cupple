@@ -5,13 +5,8 @@ const AudioContext = createContext();
 export const useAudio = () => useContext(AudioContext);
 
 export const AudioProvider = ({ children, gameState }) => {
-  const [volume, setVolume] = useState(() => {
-    const saved = localStorage.getItem('globalVolume');
-    return saved !== null ? parseFloat(saved) : 0.5;
-  });
-  const [isMuted, setIsMuted] = useState(() => {
-    return localStorage.getItem('isMuted') === 'true';
-  });
+  const [volume, setVolume] = useState(0.5);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Audio refs
   const basePath = import.meta.env.BASE_URL;
@@ -51,9 +46,6 @@ export const AudioProvider = ({ children, gameState }) => {
     lossSfxRef.current.volume = effectiveVolume;
     kickoffRef.current.volume = effectiveVolume;
     whistleRef.current.volume = effectiveVolume;
-
-    localStorage.setItem('globalVolume', volume);
-    localStorage.setItem('isMuted', isMuted);
   }, [volume, isMuted]);
 
   // Handle BGM switching based on gamestate
@@ -84,7 +76,7 @@ export const AudioProvider = ({ children, gameState }) => {
     }
   }, [gameState]);
 
-  const resumeBgm = (forceVolume = null, forceMute = null) => {
+  const resumeBgm = useCallback((forceVolume = null, forceMute = null) => {
     // Initialize Web Audio API on user interaction if not already done
     if (!analyserRef.current) {
       try {
@@ -136,7 +128,31 @@ export const AudioProvider = ({ children, gameState }) => {
         }
       }, 50);
     }
-  };
+  }, [gameState, volume, isMuted]);
+
+  const hasInteractedRef = useRef(false);
+
+  useEffect(() => {
+    if (hasInteractedRef.current) return;
+
+    const handleInteraction = () => {
+      hasInteractedRef.current = true;
+      resumeBgm();
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('touchstart', handleInteraction);
+    document.addEventListener('keydown', handleInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+  }, [resumeBgm]);
 
   const playCorrect = useCallback(() => {
     correctSfxRef.current.currentTime = 0;

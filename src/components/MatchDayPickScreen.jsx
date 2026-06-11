@@ -137,7 +137,7 @@ const MatchDayPickScreen = ({ question, balance, onPlacePick, onDone, onForfeit,
                   onClick={() => setSelectedIndex(idx)}
                   className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-200 active:scale-[0.98]
                     ${selectedIndex === idx
-                      ? 'bg-fifa-neon/15 border-fifa-neon shadow-[0_0_20px_rgba(57,255,20,0.25)]'
+                      ? 'bg-fifa-neon/15 border-fifa-neon shadow-[0_0_8px_rgba(57,255,20,0.1)]'
                       : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
                 >
                   <span className="font-bold text-lg text-left">{opt}</span>
@@ -209,7 +209,7 @@ const MatchDayPickScreen = ({ question, balance, onPlacePick, onDone, onForfeit,
               disabled={!canLock}
               className={`w-full py-5 rounded-2xl font-black text-xl uppercase tracking-wider transition-transform flex items-center justify-center
                 ${canLock
-                  ? 'bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(57,255,20,0.3)]'
+                  ? 'bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black hover:scale-[1.02] active:scale-95 shadow-[0_0_12px_rgba(57,255,20,0.12)]'
                   : 'bg-white/10 text-gray-500 cursor-not-allowed'}`}
             >
               {submitting ? 'Locking…' : (

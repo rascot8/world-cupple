@@ -33,7 +33,7 @@ const BadgeDetailModal = ({ badge, isUnlocked, onClose }) => {
         </button>
 
         <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 relative
-          ${isUnlocked ? `bg-gradient-to-br ${tierInfo.color} ${tierInfo.shadow} shadow-[0_0_40px_rgba(255,255,255,0.2)]` : 'bg-gray-800 border-2 border-gray-600'}
+          ${isUnlocked ? `bg-gradient-to-br ${tierInfo.color} ${tierInfo.shadow} shadow-[0_0_16px_rgba(255,255,255,0.08)]` : 'bg-gray-800 border-2 border-gray-600'}
         `}>
           {!isUnlocked && <Lock className="w-12 h-12 text-gray-500" />}
           {isUnlocked && <div className="absolute inset-1 rounded-full border-2 border-white/30" />}

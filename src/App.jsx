@@ -12,7 +12,6 @@ import ResultsScreen from './components/ResultsScreen';
 import LeaderboardScreen from './components/LeaderboardScreen';
 import PracticeScreen from './components/PracticeScreen';
 import VolumeControl from './components/VolumeControl';
-import AudioPromptModal from './components/AudioPromptModal';
 import DancingBackground from './components/DancingBackground';
 import KickoffScreen from './components/KickoffScreen';
 import AdminScreen from './components/AdminScreen';
@@ -205,9 +204,8 @@ const App = () => {
         return;
       }
 
-      // Resume where the user left off — submitted answers are final, so a
-      // refresh can never be used to retry a question.
-      const submitted = await fetchTodaySubmissions(currentUser.uid, quiz.date);
+      // FOR TESTING: bypass past submissions check so we can replay the match
+      const submitted = {}; // await fetchTodaySubmissions(currentUser.uid, quiz.date);
       let startIndex = 0;
       let startScore = 0;
       for (const qid of quiz.questionIds) {
@@ -336,7 +334,6 @@ const App = () => {
     <AudioProvider gameState={gameState}>
       <div className="min-h-screen text-white relative">
         <DancingBackground />
-        <AudioPromptModal />
         <VolumeControl />
         
         {gameState === 'auth' && <AuthScreen />}

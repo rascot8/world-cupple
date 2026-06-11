@@ -109,7 +109,7 @@ const LeaderboardScreen = ({ onBack, userData }) => {
             className={`text-xl font-black uppercase tracking-wider transition-all duration-300 relative ${tab === 'global' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
           >
             Global
-            {tab === 'global' && <div className="absolute -bottom-2 left-0 w-full h-1 bg-fifa-neon rounded-t-lg shadow-[0_0_10px_rgba(57,255,20,0.5)]"></div>}
+            {tab === 'global' && <div className="absolute -bottom-2 left-0 w-full h-1 bg-fifa-neon rounded-t-lg shadow-[0_0_4px_rgba(57,255,20,0.2)]"></div>}
           </button>
           
           <button 
@@ -117,7 +117,7 @@ const LeaderboardScreen = ({ onBack, userData }) => {
             className={`text-xl font-black uppercase tracking-wider transition-all duration-300 relative ${tab === 'friends' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
           >
             Friends
-            {tab === 'friends' && <div className="absolute -bottom-2 left-0 w-full h-1 bg-fifa-neon rounded-t-lg shadow-[0_0_10px_rgba(57,255,20,0.5)]"></div>}
+            {tab === 'friends' && <div className="absolute -bottom-2 left-0 w-full h-1 bg-fifa-neon rounded-t-lg shadow-[0_0_4px_rgba(57,255,20,0.2)]"></div>}
           </button>
         </div>
 

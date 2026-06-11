@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Moon, Sun, Volume2, VolumeX, User, LogOut } from 'lucide-react';
-import { auth, db } from '../config/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { validateUsernameFormat, checkProfanity, checkUsernameUniqueness, generateAlternatives } from '../utils/usernameHandler';
+import { X, Moon, Sun, Volume2, VolumeX } from 'lucide-react';
 
 const SettingsModal = ({ onClose, userData }) => {
   const { t, i18n } = useTranslation();
@@ -12,12 +9,6 @@ const SettingsModal = ({ onClose, userData }) => {
   // and trigger a class change on body for theme.
   const [isDark, setIsDark] = useState(!document.body.classList.contains('light-theme'));
   const [soundEnabled, setSoundEnabled] = useState(localStorage.getItem('soundEnabled') !== 'false');
-
-  const [newUsername, setNewUsername] = useState(userData?.username || '');
-  const [userError, setUserError] = useState('');
-  const [userSuccess, setUserSuccess] = useState('');
-  const [alternatives, setAlternatives] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
 
   const toggleTheme = () => {
     if (isDark) {
@@ -41,44 +32,7 @@ const SettingsModal = ({ onClose, userData }) => {
     i18n.changeLanguage(e.target.value);
   };
 
-  const handleUsernameChange = async () => {
-    setUserError('');
-    setUserSuccess('');
-    setAlternatives([]);
-    
-    if (newUsername === userData?.username) return;
 
-    const formatError = validateUsernameFormat(newUsername);
-    if (formatError) return setUserError(formatError);
-
-    const profanityError = checkProfanity(newUsername);
-    if (profanityError) return setUserError(profanityError);
-
-    setIsSaving(true);
-    const isUnique = await checkUsernameUniqueness(newUsername);
-    if (!isUnique) {
-      setUserError("Username already in use.");
-      setAlternatives(generateAlternatives(newUsername));
-      setIsSaving(false);
-      return;
-    }
-
-    try {
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-        username: newUsername
-      });
-      setUserSuccess("Username updated successfully!");
-      // window.location.reload() or let App handle the state update on next snapshot
-      setTimeout(() => window.location.reload(), 1000);
-    } catch (e) {
-      setUserError("Failed to update username.");
-    }
-    setIsSaving(false);
-  };
-
-  const handleLogout = () => {
-    if (auth) auth.signOut();
-  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -131,58 +85,7 @@ const SettingsModal = ({ onClose, userData }) => {
             </div>
           </section>
 
-          <section className="space-y-4">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Account</h3>
-            
-            <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
-              <label className="font-bold text-sm text-gray-300 flex items-center">
-                <User className="w-4 h-4 mr-2"/> Change Username
-              </label>
-              <div className="flex space-x-2">
-                <input 
-                  type="text" 
-                  value={newUsername} 
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  className="flex-grow p-3 rounded-lg bg-black/30 border border-white/10 text-white focus:outline-none focus:border-fifa-neon"
-                  placeholder="New Username"
-                />
-                <button 
-                  onClick={handleUsernameChange}
-                  disabled={isSaving || newUsername === userData?.username}
-                  className="px-4 py-2 bg-fifa-green text-black font-bold uppercase rounded-lg hover:bg-green-400 disabled:opacity-50"
-                >
-                  Save
-                </button>
-              </div>
-              
-              {userError && <p className="text-red-400 text-xs font-bold">{userError}</p>}
-              {userSuccess && <p className="text-fifa-neon text-xs font-bold">{userSuccess}</p>}
-              
-              {alternatives.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-xs text-gray-400 mb-1">Available alternatives:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {alternatives.map(alt => (
-                      <button 
-                        key={alt}
-                        onClick={() => setNewUsername(alt)}
-                        className="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors"
-                      >
-                        {alt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
 
-            <button 
-              onClick={handleLogout} 
-              className="w-full flex items-center justify-center p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors font-bold uppercase tracking-wider"
-            >
-              <LogOut className="w-5 h-5 mr-2" /> Sign Out
-            </button>
-          </section>
 
         </div>
       </div>
