@@ -5,7 +5,7 @@ export const RANK_THRESHOLDS = {
   GOLD: { min: 600, max: 999, name: "Gold", color: "text-yellow-400" },
   PLATINUM: { min: 1000, max: 1499, name: "Platinum", color: "text-cyan-400" },
   EMERALD: { min: 1500, max: 2499, name: "Emerald", color: "text-emerald-500" },
-  WORLD_CLASS: { min: 2500, max: Infinity, name: "World Class", color: "text-fifa-neon" }
+  WORLD_CLASS: { min: 2500, max: Infinity, name: "World Class", color: "text-red-600 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]" }
 };
 
 export const getRankForFP = (fp) => {

@@ -57,7 +57,7 @@ const ProfileDropdown = ({ onOpenProfile, onOpenRank, onOpenTutorial, onOpenSett
               onClick={() => handleMenuClick(onOpenRank)}
               className="w-full px-4 py-3 text-left text-sm font-bold text-white hover:bg-white/5 transition-colors flex items-center"
             >
-              <Trophy className="w-4 h-4 mr-3 text-gold-glow" />
+              <Trophy className="w-4 h-4 mr-3 text-[#f1dd71]" />
               My Rank
             </button>
             <button 
