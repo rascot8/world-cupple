@@ -150,11 +150,25 @@ export const PACKS = {
     name: 'Bronze Pack',
     icon: '📦',
     size: 3,
-    costFP: 150,
+    costFP: 50,
+    costCoins: 15,
     gradient: 'from-amber-700 to-amber-900',
     ring: 'border-amber-600/60',
     blurb: '3 stickers. Free with every Daily Match.',
     weights: { common: 70, rare: 24, epic: 5, legendary: 1 },
+    guarantee: null
+  },
+  silver: {
+    id: 'silver',
+    name: 'Silver Pack',
+    icon: '💿',
+    size: 4,
+    costFP: 150,
+    costCoins: 40,
+    gradient: 'from-gray-300 to-gray-500',
+    ring: 'border-gray-400/70',
+    blurb: '4 stickers. Better odds for Rare cards.',
+    weights: { common: 55, rare: 35, epic: 8, legendary: 2 },
     guarantee: null
   },
   gold: {
@@ -162,7 +176,8 @@ export const PACKS = {
     name: 'Gold Pack',
     icon: '🥇',
     size: 4,
-    costCoins: 250,
+    costFP: 400,
+    costCoins: 100,
     gradient: 'from-yellow-400 to-amber-600',
     ring: 'border-yellow-400/70',
     blurb: '4 stickers. Rare or better guaranteed.',
@@ -174,7 +189,8 @@ export const PACKS = {
     name: 'Legendary Pack',
     icon: '💎',
     size: 5,
-    costCoins: 600,
+    costFP: 1000,
+    costCoins: 250,
     gradient: 'from-fuchsia-500 to-amber-400',
     ring: 'border-fuchsia-400/70',
     blurb: '5 stickers. Epic guaranteed, 3× Legendary odds.',
@@ -183,7 +199,7 @@ export const PACKS = {
   }
 };
 
-export const PACK_FIELDS = { bronze: 'packBronze', gold: 'packGold', legendary: 'packLegendary' };
+export const PACK_FIELDS = { bronze: 'packBronze', silver: 'packSilver', gold: 'packGold', legendary: 'packLegendary' };
 
 const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'];
 

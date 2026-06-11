@@ -1,8 +1,8 @@
 export const TIERS = {
-  BRONZE: { name: 'Bronze', color: 'from-orange-500 to-amber-700', shadow: 'shadow-orange-500/50' },
-  SILVER: { name: 'Silver', color: 'from-gray-300 to-gray-500', shadow: 'shadow-gray-400/50' },
-  GOLD: { name: 'Gold', color: 'from-yellow-300 to-yellow-600', shadow: 'shadow-yellow-400/50' },
-  DIAMOND: { name: 'Diamond', color: 'from-cyan-300 to-blue-500', shadow: 'shadow-cyan-400/50' }
+  BRONZE: { name: 'Bronze', color: 'from-orange-500 to-amber-700', shadow: 'shadow-orange-500/50', rewardCP: 50 },
+  SILVER: { name: 'Silver', color: 'from-gray-300 to-gray-500', shadow: 'shadow-gray-400/50', rewardCP: 150 },
+  GOLD: { name: 'Gold', color: 'from-yellow-300 to-yellow-600', shadow: 'shadow-yellow-400/50', rewardCP: 300 },
+  DIAMOND: { name: 'Diamond', color: 'from-cyan-300 to-blue-500', shadow: 'shadow-cyan-400/50', rewardCP: 500 }
 };
 
 export const BADGES = [
@@ -39,6 +39,52 @@ export const BADGES = [
   { id: 'legendary_status', tier: 'DIAMOND', name: 'Legendary Status', description: 'Accumulate 5,000 Total Football Points (FP).' },
   { id: 'the_collector', tier: 'DIAMOND', name: 'The Collector', description: 'Complete all 64 stickers in the Legends Album.' }
 ];
+
+// Maps a badge to its current progress and max target.
+// Returns { current, max, isComplete }
+export const getBadgeProgress = (userData, badgeId) => {
+  const currentBadges = userData?.badges || [];
+  const hasBadge = currentBadges.includes(badgeId);
+  const playStreak = userData?.playStreak || 0;
+  const fp = userData?.fp || 0;
+  const invites = userData?.inviteCount || 0;
+  
+  // If they already unlocked it, progress is implicitly 100%
+  // But we try to show the actual max value if possible
+  
+  switch (badgeId) {
+    // Streak-based
+    case 'group_stage': return { current: Math.min(playStreak, 7), max: 7, isComplete: hasBadge || playStreak >= 7 };
+    case 'knockout_stage': return { current: Math.min(playStreak, 15), max: 15, isComplete: hasBadge || playStreak >= 15 };
+    case 'invincible': return { current: Math.min(playStreak, 30), max: 30, isComplete: hasBadge || playStreak >= 30 };
+    
+    // Invite-based
+    case 'squad_player': return { current: Math.min(invites, 1), max: 1, isComplete: hasBadge || invites >= 1 };
+    case 'playmaker': return { current: Math.min(invites, 3), max: 3, isComplete: hasBadge || invites >= 3 };
+    case 'global_scout': return { current: Math.min(invites, 5), max: 5, isComplete: hasBadge || invites >= 5 };
+    
+    // FP-based
+    case 'legendary_status': return { current: Math.min(fp, 5000), max: 5000, isComplete: hasBadge || fp >= 5000 };
+    
+    // Album/Collection
+    case 'shiny_hunter': {
+      const stickers = Object.keys(userData?.stickers || {});
+      const fromStickers = Math.min(stickers.length, 3); // rough approx since we don't import STICKERS here to check rarity
+      return { current: hasBadge ? 3 : (fromStickers > 0 ? 1 : 0), max: 3, isComplete: hasBadge };
+    }
+    case 'the_collector': {
+      const stickers = Object.keys(userData?.stickers || {});
+      return { current: hasBadge ? 64 : Math.min(stickers.length, 64), max: 64, isComplete: hasBadge };
+    }
+    case 'page_turner': {
+      return { current: hasBadge ? 12 : 0, max: 12, isComplete: hasBadge }; // rough
+    }
+    
+    // One-off / instant unlock
+    default:
+      return { current: hasBadge ? 1 : 0, max: 1, isComplete: hasBadge };
+  }
+};
 
 export const evaluateAchievements = (userData, matchData) => {
   const currentBadges = userData?.badges || [];

@@ -15,7 +15,7 @@ import WelcomeModal from './WelcomeModal';
 import BrandHeader from './BrandHeader';
 import MatchDayPicksSection from './MatchDayPicksSection';
 import { getDailyDeal, formatCountdown, msUntilUtcMidnight } from '../utils/economy';
-import { weekDots, getNextMilestone } from '../utils/streaks';
+import { weekDots, getNextMilestone, getMilestoneReward } from '../utils/streaks';
 import { albumProgress } from '../utils/stickers';
 import { getTournamentStatus } from '../utils/liveFeed';
 import { claimVipDailyPack } from '../utils/economyService';
@@ -40,6 +40,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
   const streak = userData?.playStreak || 0;
   const dots = weekDots(userData, today);
   const nextMilestone = getNextMilestone(streak);
+  const nextReward = getMilestoneReward(nextMilestone);
   const deal = getDailyDeal(today);
   const tournament = getTournamentStatus(today);
   const album = albumProgress(userData?.stickers || {});
@@ -97,6 +98,20 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
 
   const handleLogout = () => {
     if (auth) auth.signOut();
+  };
+
+  const formatRewardSummary = (reward) => {
+    if (!reward) return '';
+    const parts = [];
+    if (reward.fp) parts.push(`${reward.fp} FP`);
+    if (reward.coins) parts.push(`🪙${reward.coins}`);
+    if (reward.packs?.bronze) parts.push(`🎁${reward.packs.bronze}`);
+    if (reward.consumables) {
+      if (reward.consumables.hints) parts.push(`🔎${reward.consumables.hints}`);
+      if (reward.consumables.extraTime) parts.push(`⏱️${reward.consumables.extraTime}`);
+      if (reward.consumables.freeKicks) parts.push(`⚡${reward.consumables.freeKicks}`);
+    }
+    return parts.join(' • ');
   };
 
   return (
@@ -165,10 +180,16 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
               <p className="font-black text-white text-xs leading-none">
                 {streak > 0 ? `${streak}-day streak` : 'Start streak!'}
               </p>
-              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                {streak > 0 ? `Reward day ${nextMilestone}` : 'Play to ignite'}
-                {(userData?.streakFreezes || 0) > 0 && <span className="text-sky-300 ml-1">🛡️×{userData.streakFreezes}</span>}
-              </p>
+              <div className="mt-1 flex flex-col gap-0.5">
+                <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                  {streak > 0 ? `Next Reward (Day ${nextMilestone}):` : 'Play to ignite'}
+                </p>
+                {streak > 0 && nextReward && (
+                  <p className="text-[8px] font-bold text-fifa-neon uppercase tracking-widest truncate max-w-[140px]">
+                    {formatRewardSummary(nextReward)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex flex-1 justify-between items-center max-w-[180px]">
@@ -244,7 +265,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
           <button onClick={onAlbum} className="glass-panel p-4 text-left hover:bg-white/10 transition-colors">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="w-5 h-5 text-fifa-neon" />
-              <span className="font-black text-white text-sm uppercase tracking-wide">Album</span>
+              <span className="font-bold text-white text-sm uppercase tracking-wide">{t('Album') || 'Album'}</span>
             </div>
             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-1">
               <div className="h-full bg-gradient-to-r from-fifa-green to-fifa-neon rounded-full" style={{ width: `${album.percent}%` }} />
@@ -255,7 +276,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
             <div className="absolute -right-3 -top-3 w-14 h-14 bg-red-500/20 rounded-full blur-xl" />
             <div className="flex items-center gap-2 mb-2">
               <ShoppingBag className="w-5 h-5 text-amber-300" />
-              <span className="font-black text-white text-sm uppercase tracking-wide">Store</span>
+              <span className="font-bold text-white text-sm uppercase tracking-wide">{t('Store') || 'Store'}</span>
             </div>
             <span className="flex items-center gap-1 text-[10px] font-black text-red-400 uppercase tracking-wide">
               <Flame className="w-3 h-3" /> Deal: {deal.item.name} −{deal.percentOff}%
@@ -268,7 +289,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
           className="w-full py-3.5 mb-5 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold text-base uppercase tracking-wider hover:bg-blue-500/20 transition-colors flex items-center justify-center"
         >
           <Target className="w-5 h-5 mr-2" />
-          Practice Arena
+          {t('Practice Arena') || 'Practice Arena'}
         </button>
 
         <MatchDayPicksSection />
@@ -277,7 +298,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
 
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
       {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} userData={userData} />}
-      {showTrophyCabinet && <TrophyCabinetModal onClose={() => setShowTrophyCabinet(false)} userData={userData} />}
+      {showTrophyCabinet && <TrophyCabinetModal onClose={() => setShowTrophyCabinet(false)} userData={userData} onUpdateUser={onUpdateUser} />}
       {showProfileModal && <ProfileModal onClose={() => setShowProfileModal(false)} userData={userData} />}
 
       {showCountrySelect && (

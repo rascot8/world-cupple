@@ -18,6 +18,8 @@ export const AudioProvider = ({ children, gameState }) => {
   const lossSfxRef = useRef(new Audio(`${basePath}audio/gain_fp.mp3`));
   const kickoffRef = useRef(new Audio(`${basePath}audio/kickoff.mp3`));
   const whistleRef = useRef(new Audio(`${basePath}audio/whistle.mp3`));
+  const purchaseSfxRef = useRef(new Audio(`${basePath}audio/purchase.mp3?v=2`));
+  const btlpazSfxRef = useRef(new Audio(`${basePath}audio/btlpaz.mp3?v=2`));
 
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
@@ -46,6 +48,8 @@ export const AudioProvider = ({ children, gameState }) => {
     lossSfxRef.current.volume = effectiveVolume;
     kickoffRef.current.volume = effectiveVolume;
     whistleRef.current.volume = effectiveVolume;
+    purchaseSfxRef.current.volume = effectiveVolume;
+    btlpazSfxRef.current.volume = effectiveVolume;
   }, [volume, isMuted]);
 
   // Handle BGM switching based on gamestate
@@ -184,8 +188,20 @@ export const AudioProvider = ({ children, gameState }) => {
     whistleRef.current.play().catch(() => {});
   }, []);
 
+  const playPurchase = useCallback(() => {
+    console.log("Attempting to play purchase.mp3");
+    purchaseSfxRef.current.currentTime = 0;
+    purchaseSfxRef.current.play().catch(e => console.error("purchase.mp3 error:", e));
+  }, []);
+
+  const playBattlePass = useCallback(() => {
+    console.log("Attempting to play btlpaz.mp3");
+    btlpazSfxRef.current.currentTime = 0;
+    btlpazSfxRef.current.play().catch(e => console.error("btlpaz.mp3 error:", e));
+  }, []);
+
   return (
-    <AudioContext.Provider value={{ volume, setVolume, isMuted, setIsMuted, playCorrect, playWrong, playGain, playLoss, playKickoffSfx, playWhistle, resumeBgm, getAudioData }}>
+    <AudioContext.Provider value={{ volume, setVolume, isMuted, setIsMuted, playCorrect, playWrong, playGain, playLoss, playKickoffSfx, playWhistle, playPurchase, playBattlePass, resumeBgm, getAudioData }}>
       {children}
     </AudioContext.Provider>
   );

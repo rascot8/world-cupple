@@ -8,7 +8,7 @@ import {
   COIN_BUNDLES, STORE_ITEMS, VIP, getDailyDeal, msUntilUtcMidnight, formatCountdown
 } from '../utils/economy';
 import { PACKS, PITY_THRESHOLD } from '../utils/stickers';
-import { purchaseCoins, purchaseItem, purchaseVip, purchaseBronzePackWithFP } from '../utils/economyService';
+import { purchaseCoins, purchaseItem, purchaseVip, purchasePack } from '../utils/economyService';
 import { getTodayUTCString } from '../utils/dailySeed';
 
 
@@ -19,7 +19,7 @@ import { getTodayUTCString } from '../utils/dailySeed';
  * shelf. Every price is in coins except Bronze Packs, which soak up FP.
  */
 const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
-  const { playGain } = useAudio();
+  const { playGain, playPurchase, playBattlePass } = useAudio();
   const uid = auth.currentUser?.uid;
   const [checkout, setCheckout] = useState(null); // bundle being bought
   const [busy, setBusy] = useState(null); // item id mid-purchase
@@ -39,13 +39,15 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
 
   const flashBought = (id) => {
     setJustBought(id);
-    playGain();
-    setTimeout(() => setJustBought(null), 1800);
+    if (id !== 'vip') {
+      setTimeout(() => setJustBought(null), 1800);
+    }
   };
 
   const buyItem = async (item, dealPrice = null) => {
     setError('');
     setBusy(item.id);
+    playPurchase();
     try {
       const partial = await purchaseItem(uid, userData, item.id, dealPrice);
       onUpdateUser(partial);
@@ -60,6 +62,7 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
   const buyVipNow = async () => {
     setError('');
     setBusy('vip');
+    playBattlePass();
     try {
       const partial = await purchaseVip(uid, userData);
       onUpdateUser(partial);
@@ -72,13 +75,14 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
     }
   };
 
-  const buyBronze = async () => {
+  const buyPackNow = async (packId, currency) => {
     setError('');
-    setBusy('bronze');
+    setBusy(`${packId}_${currency}`);
+    playPurchase();
     try {
-      const partial = await purchaseBronzePackWithFP(uid, userData);
+      const partial = await purchasePack(uid, userData, packId, currency);
       onUpdateUser(partial);
-      flashBought('bronze');
+      flashBought(`${packId}_${currency}`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -195,7 +199,7 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
             <button
               onClick={buyVipNow}
               disabled={busy === 'vip' || coins < VIP.priceCoins}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-300 to-amber-500 text-black font-black uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:scale-100"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-purple-700 text-white shadow-[0_0_15px_rgba(192,38,211,0.6)] font-black uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:scale-100"
             >
               {justBought === 'vip' ? 'WELCOME, CAPTAIN! ⭐' : `Join for 🪙 ${VIP.priceCoins.toLocaleString()} — all season`}
             </button>
@@ -236,36 +240,77 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
               );
             })}
 
-            {/* Bronze pack — the FP sink, free-player friendly */}
-            <div className="glass-panel p-4 flex items-center justify-between border-dashed">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="text-3xl shrink-0">{PACKS.bronze.icon}</span>
-                <div className="min-w-0">
-                  <p className="font-black text-white">Bronze Pack</p>
-                  <p className="text-[10px] text-gray-400 font-bold leading-snug">{PACKS.bronze.blurb}</p>
+            {/* Sticker Packs */}
+            {Object.values(PACKS).map(pack => (
+              <div key={pack.id} className="glass-panel p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-3xl shrink-0">{pack.icon}</span>
+                  <div className="min-w-0">
+                    <p className="font-black text-white">{pack.name}</p>
+                    <p className="text-[10px] text-gray-400 font-bold leading-snug">{pack.blurb}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 w-full mt-1">
+                  <button
+                    onClick={() => buyPackNow(pack.id, 'fp')}
+                    disabled={busy === `${pack.id}_fp` || (userData?.fp || 0) < pack.costFP}
+                    className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-gold-glow font-black text-xs sm:text-sm tabular-nums hover:bg-white/15 transition-colors disabled:opacity-40"
+                  >
+                    {justBought === `${pack.id}_fp` ? <Check className="w-4 h-4 mx-auto" /> : <>⭐ {pack.costFP} FP</>}
+                  </button>
+                  <button
+                    onClick={() => buyPackNow(pack.id, 'coins')}
+                    disabled={busy === `${pack.id}_coins` || coins < pack.costCoins}
+                    className="flex-1 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-300/40 text-amber-300 font-black text-xs sm:text-sm tabular-nums hover:bg-amber-400/25 transition-colors disabled:opacity-40"
+                  >
+                    {justBought === `${pack.id}_coins` ? <Check className="w-4 h-4 mx-auto" /> : <>🪙 {pack.costCoins}</>}
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={buyBronze}
-                disabled={busy === 'bronze' || (userData?.fp || 0) < PACKS.bronze.costFP}
-                className="shrink-0 ml-3 px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-gold-glow font-black text-sm tabular-nums hover:bg-white/15 transition-colors disabled:opacity-40"
-              >
-                {justBought === 'bronze' ? <Check className="w-5 h-5" /> : <>{PACKS.bronze.costFP} FP</>}
-              </button>
-            </div>
+            ))}
           </div>
         </section>
 
         {/* Open-now shortcut when packs are sitting in the inventory */}
-        {(userData?.packBronze || 0) > 0 && (
-          <button
-            onClick={() => onOpenPack('bronze')}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black font-black text-lg uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform"
-          >
-            🎁 You have unopened packs — rip one now!
-          </button>
-        )}
+        {(() => {
+          const firstOwnedPack = Object.keys(PACKS).find(id => (userData?.[PACK_FIELDS[id]] || 0) > 0);
+          if (!firstOwnedPack) return null;
+          return (
+            <button
+              onClick={() => onOpenPack(firstOwnedPack)}
+              className="w-full py-4 mt-6 rounded-2xl bg-gradient-to-r from-fifa-green to-fifa-neon text-fifa-black font-black text-lg uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform"
+            >
+              🎁 You have unopened packs — rip one now!
+            </button>
+          );
+        })()}
       </div>
+
+      {justBought === 'vip' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+          {/* Animated LED Border Wrapper */}
+          <div className="relative p-1 rounded-2xl overflow-hidden animate-vip-epic-pop animate-rainbow-glow w-full max-w-sm mx-auto">
+            {/* Spinning conic gradient */}
+            <div className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(red,yellow,lime,aqua,blue,magenta,red)] pointer-events-none" />
+            
+            {/* Inner Content Panel */}
+            <div className="relative bg-gray-900 rounded-[14px] p-8 text-center h-full border border-gray-800">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 opacity-20 blur-xl pointer-events-none" />
+              <Star className="w-24 h-24 text-yellow-300 mx-auto mb-6 relative z-10 animate-pulse-gold" fill="currentColor" />
+              <h2 className="text-4xl font-black text-white uppercase tracking-widest mb-3 relative z-10 drop-shadow-lg">Captain's Club</h2>
+              <p className="text-xl text-yellow-400 font-black uppercase tracking-wider relative z-10">Welcome, Captain! ⭐</p>
+              
+              {/* Close Button */}
+              <button 
+                onClick={() => setJustBought(null)} 
+                className="mt-8 w-full py-3.5 rounded-xl bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.4)] font-black uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform relative z-10"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {checkout && (
         <CheckoutModal

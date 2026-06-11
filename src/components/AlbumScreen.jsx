@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Gift, Coins, X, Sparkles } from 'lucide-react';
 import { auth } from '../config/firebase';
 import BrandHeader from './BrandHeader';
@@ -17,6 +17,8 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
   const uid = auth.currentUser?.uid;
   const [activePage, setActivePage] = useState(PAGES[0].id);
   const [detail, setDetail] = useState(null); // sticker detail modal
+  const [sellAnim, setSellAnim] = useState(null);
+  const [displayCoins, setDisplayCoins] = useState(0);
   const [error, setError] = useState('');
 
   const owned = userData?.stickers || {};
@@ -24,10 +26,27 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
   const claimedPages = userData?.claimedPages || [];
   const wildcards = userData?.wildcards || 0;
 
-  const packInventory = [
-    { id: 'bronze', count: userData?.packBronze || 0 }
-  ];
+  const packInventory = Object.keys(PACKS).map(id => ({
+    id,
+    count: userData?.[PACK_FIELDS[id]] || 0
+  }));
   const totalPacks = packInventory.reduce((s, p) => s + p.count, 0);
+
+  // Animate coins counting up
+  useEffect(() => {
+    if (sellAnim && sellAnim.phase === 'counting') {
+      let startTime = null;
+      const duration = 1200;
+      const step = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        setDisplayCoins(Math.floor(sellAnim.oldCoins + (sellAnim.amount * easeOut)));
+        if (progress < 1) window.requestAnimationFrame(step);
+      };
+      window.requestAnimationFrame(step);
+    }
+  }, [sellAnim]);
 
   const handleClaimPage = async (pageId) => {
     setError('');
@@ -44,10 +63,31 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
   const handleSellDuplicate = async (stickerId) => {
     setError('');
     try {
+      const amount = RARITIES[detail.rarity].dupeCP;
+      const oldCoins = userData?.coins || 0;
+      
       const partial = await sellDuplicateSticker(uid, userData, stickerId);
       onUpdateUser(partial);
-      playGain();
-      window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 30, gold: true } }));
+      new Audio('/audio/sell.mp3').play().catch(e => console.error('Audio play failed', e));
+      window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 40, gold: true } }));
+      
+      // Start sequence
+      setSellAnim({ phase: 'enlarge', amount, oldCoins });
+      
+      setTimeout(() => {
+        setSellAnim(prev => prev ? { ...prev, phase: 'crash' } : null);
+      }, 500); // 0.5s to enlarge and fade out
+
+      setTimeout(() => {
+        setSellAnim(prev => prev ? { ...prev, phase: 'counting' } : null);
+      }, 1100); // Wait for crash drop-in to finish, then count
+      
+      setTimeout(() => {
+        setSellAnim(null);
+        // Optional: auto-close if no dupes left, but let's just let them see the new coin balance 
+        // or let them manually close.
+      }, 3500);
+      
     } catch (e) {
       setError(e.message);
     }
@@ -120,7 +160,7 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
         {error && <p className="text-center text-sm text-red-400 font-bold mb-3">{error}</p>}
 
         {/* Page tabs */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3 -mx-1 px-1">
+        <div className="flex flex-wrap justify-center gap-2 mb-4">
           {PAGES.map((p) => {
             const pp = progress.byPage[p.id];
             return (
@@ -174,33 +214,53 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
 
       {/* Sticker detail modal */}
       {detail && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm" onClick={() => setDetail(null)}>
-          <div className="w-full max-w-xs flex flex-col items-center animate-float-up" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setDetail(null)} className="self-end mb-3 text-gray-400 hover:text-white">
-              <X className="w-6 h-6" />
-            </button>
-            <div className="w-48">
-              <StickerCard sticker={detail} owned={owned[detail.id] > 0} count={owned[detail.id] || 0} size="lg" />
-            </div>
-            <p className={`mt-4 text-center text-sm font-bold ${owned[detail.id] > 0 ? 'text-gray-300' : 'text-gray-500'} italic leading-snug`}>
-              {owned[detail.id] > 0 ? `“${detail.flavor}”` : 'Find this sticker in packs to reveal its story.'}
-            </p>
-            <p className="mt-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-              Duplicate value: {RARITIES[detail.rarity].dupeCP} CupCoins
-            </p>
-            {(owned[detail.id] || 0) > 1 && (
-              <button
-                onClick={() => handleSellDuplicate(detail.id)}
-                className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-700 text-white font-black text-sm uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2"
-              >
-                <Coins className="w-4 h-4" /> Sell Duplicate (+{RARITIES[detail.rarity].dupeCP})
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm" onClick={() => !sellAnim && setDetail(null)}>
+          <div className="w-full max-w-xs flex flex-col items-center relative" onClick={(e) => e.stopPropagation()}>
+            
+            {/* The CupCoins crash and counting sequence */}
+            {sellAnim && sellAnim.phase !== 'enlarge' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-50 animate-drop-in pointer-events-none">
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">CupCoins</p>
+                <div className="flex items-center gap-2">
+                  <Coins className="w-10 h-10 text-amber-400" />
+                  <p className="text-5xl font-black text-amber-300 tabular-nums drop-shadow-lg">
+                    {sellAnim.phase === 'counting' ? displayCoins : sellAnim.oldCoins}
+                  </p>
+                </div>
+                <p className={`text-2xl font-black text-fifa-neon mt-4 transition-opacity duration-500 ${sellAnim.phase === 'counting' ? 'opacity-100 scale-125' : 'opacity-0 scale-50'}`}>
+                  +{sellAnim.amount}
+                </p>
+              </div>
+            )}
+
+            {/* The regular modal content. Fades out and scales up if sellAnim is active */}
+            <div className={`w-full flex flex-col items-center transition-all duration-500 ${sellAnim ? 'opacity-0 scale-125 pointer-events-none' : 'opacity-100 animate-float-up'}`}>
+              <button onClick={() => setDetail(null)} className="self-end mb-3 text-gray-400 hover:text-white">
+                <X className="w-6 h-6" />
               </button>
-            )}
-            {!(owned[detail.id] > 0) && (
-              <p className="mt-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">
-                Keep opening packs to find this legend.
+              <div className="w-48">
+                <StickerCard sticker={detail} owned={owned[detail.id] > 0} count={owned[detail.id] || 0} size="lg" />
+              </div>
+              <p className={`mt-4 text-center text-sm font-bold ${owned[detail.id] > 0 ? 'text-gray-300' : 'text-gray-500'} italic leading-snug`}>
+                {owned[detail.id] > 0 ? `“${detail.flavor}”` : 'Find this sticker in packs to reveal its story.'}
               </p>
-            )}
+              <p className="mt-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                Duplicate value: {RARITIES[detail.rarity].dupeCP} CupCoins
+              </p>
+              {(owned[detail.id] || 0) > 1 && !sellAnim && (
+                <button
+                  onClick={() => handleSellDuplicate(detail.id)}
+                  className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-700 text-white font-black text-sm uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2"
+                >
+                  <Coins className="w-4 h-4" /> Sell Duplicate (+{RARITIES[detail.rarity].dupeCP})
+                </button>
+              )}
+              {!(owned[detail.id] > 0) && !sellAnim && (
+                <p className="mt-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">
+                  Keep opening packs to find this legend.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}

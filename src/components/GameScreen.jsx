@@ -257,6 +257,13 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
 
       <BrandHeader isHero={false} />
 
+      {/* Absolute Question Counter */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+        <span className="text-3xl font-black text-white tracking-widest drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]">
+          {currentIndex + 1} / {total}
+        </span>
+      </div>
+
       <button
         onClick={() => { setIsPaused(true); setShowQuitModal(true); }}
         className="absolute top-6 right-6 z-20 text-gray-400 hover:text-white transition-colors p-2"
@@ -265,43 +272,34 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
       </button>
 
       <div className="w-full max-w-md z-10 flex flex-col h-full pt-16">
-        {/* Top Bar */}
-        <div className="flex justify-between items-center mb-8 pt-4">
-          <div className="flex space-x-2">
-            <div className="bg-white/10 px-4 py-2 rounded-full backdrop-blur-md flex items-center">
-              <span className="text-gray-300 font-bold text-sm uppercase tracking-wider">
-                {t('Question')} {currentIndex + 1} {t('of')} {total}
-              </span>
+        {/* Top Bar (Streak) */}
+        {streak > 0 && (
+          <div className="flex justify-center mb-4 pt-4">
+            <div
+              className={`px-4 py-2 rounded-full font-black flex items-center transition-all duration-300 ${
+                streak >= 7
+                  ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white animate-shake-fire scale-125 shadow-[0_0_12px_rgba(239,68,68,0.32)] border-2 border-yellow-300'
+                  : streak >= 3
+                    ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.24)]'
+                    : 'bg-white/10 text-orange-400'
+              }`}
+            >
+              🔥 {streak >= 7 ? 'ON FIRE!' : 'Streak:'} {streak}
             </div>
-            {varTokens > 0 && !varUsed && (
-              <div className="px-3 py-2 rounded-full bg-sky-500/15 border border-sky-400/40 flex items-center gap-1.5" title="VAR Review available">
-                <Tv className="w-4 h-4 text-sky-300" />
-                <span className="text-sky-300 font-black text-xs tabular-nums">×{varTokens}</span>
-              </div>
-            )}
-            {streak > 0 && (
-              <div
-                className={`px-4 py-2 rounded-full font-black flex items-center transition-all duration-300 ${
-                  streak >= 7
-                    ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white animate-shake-fire scale-125 shadow-[0_0_12px_rgba(239,68,68,0.32)] ml-4 border-2 border-yellow-300'
-                    : streak >= 3
-                      ? 'bg-orange-500 text-white animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.24)]'
-                      : 'bg-white/10 text-orange-400'
-                }`}
-              >
-                🔥 {streak >= 7 ? 'ON FIRE!' : 'Streak:'} {streak}
-              </div>
-            )}
           </div>
-          <div className="text-fifa-neon font-black text-2xl">
+        )}
+
+        {/* Centered Timer */}
+        <div className={`flex justify-center mb-3 ${streak === 0 ? 'pt-8' : ''}`}>
+          <div className={`font-black text-3xl transition-colors duration-500 ${timeLeft <= 3 ? 'text-red-500 animate-fast-pulse' : timeLeft <= 7 ? 'text-yellow-400' : 'text-fifa-neon'}`}>
             {timeLeft}s
           </div>
         </div>
 
         {/* Timer Bar */}
-        <div className="w-full h-2 bg-white/10 rounded-full mb-10 overflow-hidden">
+        <div className={`w-4/5 max-w-xs mx-auto h-3 bg-white/10 rounded-full mb-10 overflow-hidden ${timeLeft <= 3 ? 'animate-fast-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]' : ''}`}>
           <div
-            className="h-full bg-gradient-to-r from-fifa-green to-fifa-neon transition-all duration-1000 ease-linear"
+            className={`h-full transition-all duration-1000 ease-linear ${timeLeft <= 3 ? 'bg-red-500' : timeLeft <= 7 ? 'bg-yellow-400' : 'bg-gradient-to-r from-fifa-green to-fifa-neon'}`}
             style={{ width: `${(timeLeft / 15) * 100}%` }}
           ></div>
         </div>
@@ -309,13 +307,21 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
         {/* Question Area */}
         <div className="flex-grow flex flex-col justify-center">
           <div className="mb-6">
-            <h2 className="text-3xl font-black text-white leading-tight">
+            <h2 className="text-3xl font-black text-white leading-tight text-center">
               {question.text}
             </h2>
           </div>
 
-          {/* Consumables Bar */}
-          <div className="flex gap-3 mt-4 mb-2 justify-center">
+          {/* Info and Consumables Bar */}
+          <div className="flex flex-wrap gap-2 mt-4 mb-2 justify-center items-center">
+
+            {varTokens > 0 && !varUsed && (
+              <div className="px-3 py-2 rounded-xl bg-sky-500/15 border border-sky-400/40 flex items-center gap-1.5" title="VAR Review available">
+                <Tv className="w-4 h-4 text-sky-300" />
+                <span className="text-sky-300 font-black text-xs tabular-nums">×{varTokens}</span>
+              </div>
+            )}
+
             <button
               onClick={handleHint}
               disabled={hints < 1 || hintUsed || isPaused}

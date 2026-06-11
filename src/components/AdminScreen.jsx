@@ -11,6 +11,9 @@ import {
   voidPickResult
 } from '../utils/adminService';
 import { impliedChance } from '../utils/picks';
+import { auth, db } from '../config/firebase';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { STICKERS } from '../utils/stickers';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const pad = (n) => String(n).padStart(2, '0');
@@ -46,6 +49,24 @@ const AdminScreen = ({ onExit }) => {
   const [pickerSearch, setPickerSearch] = useState('');
 
   const [settlingId, setSettlingId] = useState(null);
+
+  const handleGiveStickers = async () => {
+    if (!auth.currentUser) return;
+    try {
+      const stickers = {};
+      STICKERS.forEach(s => {
+        stickers[s.id] = 2; // Give 2 copies (1 for album, 1 duplicate)
+      });
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+        stickers,
+        badges: arrayUnion('shiny_hunter', 'the_collector')
+      });
+      alert('Success! You now have duplicates of every sticker in your album, and the album completion badges.');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to give stickers. Ensure you are an admin and signed in.');
+    }
+  };
 
   const loadMonth = useCallback(async () => {
     const start = fmt(viewYear, viewMonth + 1, 1);
@@ -229,7 +250,15 @@ const AdminScreen = ({ onExit }) => {
           <h1 className="text-2xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-fifa-green to-fifa-neon">
             Quiz Admin
           </h1>
-          <div className="w-28" />
+          <div className="w-32 text-right">
+            <button 
+              onClick={handleGiveStickers} 
+              title="Give yourself 2 copies of every sticker"
+              className="text-[10px] font-bold text-gray-400 hover:text-white uppercase tracking-wider px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 transition-colors"
+            >
+              Get All Stickers x2
+            </button>
+          </div>
         </div>
 
         {error && (

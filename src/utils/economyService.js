@@ -10,8 +10,9 @@
  */
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { rollPack, PACK_FIELDS, albumProgress, PAGE_REWARD_COINS, STICKERS_BY_ID, PACKS } from './stickers';
+import { rollPack, PACK_FIELDS, albumProgress, PAGE_REWARD_COINS, STICKERS_BY_ID, PACKS, RARITIES } from './stickers';
 import { STORE_ITEMS_BY_ID, FIRST_BUY_MULTIPLIER, VIP } from './economy';
+import { TIERS, BADGES } from './achievements';
 import { getTodayUTCString } from './dailySeed';
 
 const write = async (uid, partial) => {
@@ -75,12 +76,27 @@ export const purchaseVip = async (uid, userData) => {
   return partial;
 };
 
-/** Bronze packs are the FP sink — buyable without spending a cent. */
-export const purchaseBronzePackWithFP = async (uid, userData) => {
-  const cost = PACKS.bronze.costFP;
-  const fp = userData.fp || 0;
-  if (fp < cost) throw new Error(`You need ${cost} FP for a Bronze Pack.`);
-  const partial = { fp: fp - cost, packBronze: (userData.packBronze || 0) + 1 };
+/** Buy any pack with either FP or CupCoins. */
+export const purchasePack = async (uid, userData, packId, currencyType = 'coins') => {
+  const pack = PACKS[packId];
+  if (!pack) throw new Error('Unknown pack.');
+  
+  const field = PACK_FIELDS[packId];
+  const partial = {};
+
+  if (currencyType === 'fp') {
+    const cost = pack.costFP;
+    const fp = userData.fp || 0;
+    if (fp < cost) throw new Error(`You need ${cost} FP for a ${pack.name}.`);
+    partial.fp = fp - cost;
+  } else {
+    const cost = pack.costCoins;
+    const coins = userData.coins || 0;
+    if (coins < cost) throw new Error(`You need ${cost} CupCoins for a ${pack.name}.`);
+    partial.coins = coins - cost;
+  }
+
+  partial[field] = (userData[field] || 0) + 1;
   await write(uid, partial);
   return partial;
 };
@@ -174,4 +190,21 @@ export const consumeConsumable = async (uid, userData, field) => {
   const partial = { [field]: current - 1 };
   await write(uid, partial);
   return partial;
+};
+
+export const claimBadgeReward = async (uid, userData, badgeId) => {
+  const claimed = userData.claimedBadges || [];
+  if (claimed.includes(badgeId)) throw new Error('Reward already claimed.');
+
+  const badge = BADGES.find(b => b.id === badgeId);
+  if (!badge) throw new Error('Badge not found.');
+
+  const tier = TIERS[badge.tier];
+  const reward = tier?.rewardCP || 0;
+
+  const partial = {
+    coins: (userData.coins || 0) + reward,
+    claimedBadges: [...claimed, badgeId]
+  };
+  return write(uid, partial);
 };

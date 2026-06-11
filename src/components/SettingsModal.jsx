@@ -39,7 +39,7 @@ const SettingsModal = ({ onClose, userData }) => {
       <div className="bg-fifa-dark w-full max-w-md rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         <div className="flex justify-between items-center p-6 border-b border-white/10">
-          <h2 className="text-xl font-black uppercase tracking-wider text-white">Settings</h2>
+          <h2 className="text-xl font-black uppercase tracking-wider text-white">{t('Settings') || 'Settings'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <X className="w-6 h-6" />
           </button>
@@ -48,26 +48,26 @@ const SettingsModal = ({ onClose, userData }) => {
         <div className="p-6 overflow-y-auto space-y-8 flex-grow">
           
           <section className="space-y-4">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Preferences</h3>
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">{t('Preferences') || 'Preferences'}</h3>
             
             <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5">
-              <span className="font-bold">Theme</span>
+              <span className="font-bold">{t('Theme') || 'Theme'}</span>
               <button onClick={toggleTheme} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
                 {isDark ? <Moon className="w-5 h-5 text-fifa-neon" /> : <Sun className="w-5 h-5 text-yellow-400" />}
               </button>
             </div>
 
             <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5">
-              <span className="font-bold">Sound Effects</span>
+              <span className="font-bold">{t('Sound Effects') || 'Sound Effects'}</span>
               <button onClick={toggleSound} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
                 {soundEnabled ? <Volume2 className="w-5 h-5 text-fifa-neon" /> : <VolumeX className="w-5 h-5 text-gray-400" />}
               </button>
             </div>
 
             <div className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5">
-              <span className="font-bold">Language</span>
+              <span className="font-bold">{t('Language') || 'Language'}</span>
               <select 
-                value={i18n.language} 
+                value={i18n.language?.split('-')[0] || 'en'} 
                 onChange={handleLanguageChange}
                 className="bg-transparent text-fifa-neon font-bold uppercase tracking-wider focus:outline-none appearance-none cursor-pointer"
               >
