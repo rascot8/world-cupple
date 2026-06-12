@@ -147,7 +147,8 @@ const ResultsScreen = ({ score, total, totalFP, userData, rewards, onOpenPack, o
           <div className="text-left">
             <p className="text-gray-400 uppercase tracking-widest text-[10px] font-bold mb-1">{t('Score')}</p>
             <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-              {score} <span className="text-xl text-gray-500">/ {total}</span>
+              {/* Partial-credit rounds can leave a fractional score */}
+              {Number.isInteger(score) ? score : score.toFixed(1)} <span className="text-xl text-gray-500">/ {total}</span>
             </div>
           </div>
           <div className="text-center">

@@ -136,6 +136,23 @@ blocked, so the editor can't be used to cheat.
    Re-running is safe: questions are upserted under stable ids and existing
    `dailyQuizzes` docs are never overwritten (use `--force-quizzes` to regenerate).
 
+   **World Cup 2026 dailies** — the daily now mixes 10 game types (trivia,
+   anagram, missing vowels, higher/lower, closest guess, year guesser, career
+   path, crest match, timeline, odd one out; see `src/utils/roundTypes.js`).
+   Seed a themed daily for every remaining tournament day (each day's rounds
+   are generated from that day's real fixtures):
+
+   ```bash
+   npm run seed:worldcup -- --dry-run             # preview every generated round
+   npm run seed:worldcup                          # today → July 19, 2026
+   node scripts/seedWorldCupDailies.mjs --date 2026-06-15   # one day
+   ```
+
+   Fixture data lives in `scripts/data/wc2026-fixtures.json` and the facts the
+   generators draw on in `scripts/data/worldcupFacts.mjs`. Like the migration,
+   existing quiz docs are skipped unless `--force-quizzes` is passed, so admin
+   edits made in `/admin` survive re-runs.
+
 2. **Deploy the security rules** — `firebase deploy --only firestore:rules` (or
    paste `firestore.rules` into Firebase console → Firestore → Rules). This
    replaces test mode and is required for both the anti-cheat and admin access.

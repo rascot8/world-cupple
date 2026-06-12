@@ -1,24 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAudio } from '../contexts/AudioContext';
-import BrandHeader from './BrandHeader';
-import { fetchCorrectAnswer } from '../utils/quizService';
+import { useAudio } from '../../contexts/AudioContext';
+import BrandHeader from '../BrandHeader';
+import QuitModal from '../QuitModal';
+import { fetchCorrectAnswer } from '../../utils/quizService';
+import { gradeRound } from '../../utils/grading';
+import { getRoundType, roundTimerSeconds } from '../../utils/roundTypes';
 import { X, Tv, Search, Clock, Zap } from 'lucide-react';
-import QuitModal from './QuitModal';
 
-// question: { id, text, options } — the correct answer is NOT in this object.
-// It only becomes known via onSubmitAnswer, after the pick is locked in server-side.
+// Shared chrome + state machine for every timed round type. The per-type
+// component (rendered via the `children` render prop) owns only the question
+// area and how a choice is built; locking, reveal, grading, the timer, VAR
+// and consumables all live here so each new round type stays tiny.
 //
-// VAR Review: after a wrong answer, a player holding a VAR token may overturn
-// the call (once per match) — the answer then counts as correct. Tokens come
-// from the store; this is the mid-match monetization hook.
+// children({ question, locked, answer, choice, score, overturned, submit,
+//            timeLeft, eliminated })
+//   - submit(choiceString) locks the round (null = timeout)
+//   - answer is the revealed questionAnswers doc (null until revealed)
+//   - score is the graded 0..1 result for the reveal UI
 const VAR_DECISION_SECONDS = 7;
 
-const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, hints = 0, extraTime = 0, freeKicks = 0, onUseConsumable, onOverrideAnswer, t, currentStreak = 0 }) => {
+const RoundShell = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, onForfeit, varTokens = 0, varUsed = false, onUseVar, hints = 0, extraTime = 0, freeKicks = 0, onUseConsumable, t, currentStreak = 0, children }) => {
   const { playCorrect, playWrong, playGain } = useAudio();
-  const [options, setOptions] = useState([]);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [correctAnswer, setCorrectAnswer] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(15);
+  const roundType = getRoundType(question.type);
+  const duration = roundTimerSeconds(question);
+
+  const [choice, setChoice] = useState(null);
+  const [answer, setAnswer] = useState(null);
+  const [score, setScore] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(duration);
   const [isPaused, setIsPaused] = useState(false);
   const [streak, setStreak] = useState(currentStreak);
   const [showQuitModal, setShowQuitModal] = useState(false);
@@ -26,31 +35,26 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
   const [varCountdown, setVarCountdown] = useState(VAR_DECISION_SECONDS);
   const [overturned, setOverturned] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
-  const [eliminatedOptions, setEliminatedOptions] = useState([]);
+  const [eliminated, setEliminated] = useState([]);
   const [extraTimeUsed, setExtraTimeUsed] = useState(false);
   const [freeKickUsed, setFreeKickUsed] = useState(false);
   const varDecidedRef = useRef(false);
-  const submittedRef = useRef(false); // one submission per question, ever
+  const submittedRef = useRef(false); // one submission per round, ever
+  const freeKickRef = useRef(false);
 
   useEffect(() => {
-    // Randomize options
-    const rawOptions = [...(question.options || [])];
-    // Fisher-Yates shuffle
-    for (let i = rawOptions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [rawOptions[i], rawOptions[j]] = [rawOptions[j], rawOptions[i]];
-    }
-    setOptions(rawOptions);
-    setSelectedOption(null);
-    setCorrectAnswer(null);
-    setTimeLeft(15);
+    setChoice(null);
+    setAnswer(null);
+    setScore(null);
+    setTimeLeft(roundTimerSeconds(question));
     setIsPaused(false);
     setVarPrompt(false);
     setOverturned(false);
     varDecidedRef.current = false;
     submittedRef.current = false;
+    freeKickRef.current = false;
     setHintUsed(false);
-    setEliminatedOptions([]);
+    setEliminated([]);
     setExtraTimeUsed(false);
     setFreeKickUsed(false);
     setStreak(currentStreak);
@@ -83,53 +87,58 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [varPrompt]);
 
-  const advance = (isCorrect, fastAnswer, delay = 2000) => {
+  const advance = (roundScore, fastAnswer, delay = 2200) => {
     setTimeout(() => {
-      onAnswer(isCorrect, { fastAnswer });
+      onAnswer(roundScore, { fastAnswer });
     }, delay);
   };
 
-  // Lock in the choice (null on timeout), then reveal the answer the server sends back
-  const submitAndReveal = async (choice) => {
+  // Lock in the choice (null on timeout), reveal the answer doc, grade it.
+  const submitAndReveal = async (rawChoice) => {
     if (isPaused || submittedRef.current) return;
 
     submittedRef.current = true;
     setIsPaused(true);
-    setSelectedOption(choice);
+    setChoice(rawChoice);
 
-    let correct = null;
+    let answerDoc = null;
     try {
-      correct = await onSubmitAnswer(question.id, choice);
+      answerDoc = await onSubmitAnswer(question.id, rawChoice);
     } catch (error) {
       console.error('Failed to submit answer:', error);
     }
-    setCorrectAnswer(correct);
+    setAnswer(answerDoc);
 
-    const isCorrect = choice !== null && choice === correct;
-    const fastAnswer = timeLeft >= 12;
+    // A Free Kick wins the round outright, whatever was (not) answered.
+    const roundScore = freeKickRef.current
+      ? 1
+      : gradeRound(question.type, rawChoice ?? '', answerDoc);
+    setScore(roundScore);
+
+    const isCorrect = roundScore >= 0.5;
+    const fastAnswer = timeLeft >= duration - 3;
 
     if (isCorrect) {
       playCorrect();
-      setStreak(prev => {
+      setStreak((prev) => {
         const newStreak = prev + 1;
         if (newStreak >= 7) {
           window.dispatchEvent(new CustomEvent('streak-fire', { detail: { streak: newStreak } }));
         }
         return newStreak;
       });
-      advance(true, fastAnswer);
+      advance(roundScore, fastAnswer);
       return;
     }
 
     playWrong();
-
     setStreak(0);
 
     // Wrong call — offer the VAR review if the player can afford the drama.
-    if (choice !== null && !varUsed && varTokens > 0 && onUseVar) {
+    if (rawChoice !== null && !varUsed && varTokens > 0 && onUseVar) {
       setTimeout(() => setVarPrompt(true), 900);
     } else {
-      advance(false, false);
+      advance(roundScore, false);
     }
   };
 
@@ -137,7 +146,7 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     if (varDecidedRef.current) return;
     varDecidedRef.current = true;
     setVarPrompt(false);
-    advance(false, false, 800);
+    advance(score ?? 0, false, 800);
   };
 
   const overturnCall = async () => {
@@ -147,8 +156,9 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
       await onUseVar(question.id);
       setVarPrompt(false);
       setOverturned(true);
+      setScore(1);
       playGain();
-      setStreak(prev => {
+      setStreak((prev) => {
         const newStreak = prev + 1;
         if (newStreak >= 7) {
           window.dispatchEvent(new CustomEvent('streak-fire', { detail: { streak: newStreak } }));
@@ -156,7 +166,7 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
         return newStreak;
       });
       window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 50 } }));
-      advance(true, false, 1800);
+      advance(1, false, 1800);
     } catch (error) {
       console.error('VAR failed:', error);
       varDecidedRef.current = false;
@@ -164,22 +174,28 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
     }
   };
 
+  // Scout: eliminate one wrong option. Seeded/admin content carries a
+  // known-wrong option in payload.eliminate; legacy standard questions fall
+  // back to peeking at the answer (practice-pool questions only, per rules).
+  const hintApplies = roundType.optionBased;
   const handleHint = async () => {
-    if (hints > 0 && !hintUsed && !isPaused && onUseConsumable) {
+    if (hints > 0 && !hintUsed && !isPaused && onUseConsumable && hintApplies) {
       try {
         await onUseConsumable('hints');
         setHintUsed(true);
         playGain();
         window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 20 } }));
-        
-        const correct = await fetchCorrectAnswer(question.id);
-        const incorrects = options.filter(o => o !== correct && !eliminatedOptions.includes(o));
-        if (incorrects.length > 0) {
-          const toElim = incorrects[Math.floor(Math.random() * incorrects.length)];
-          setEliminatedOptions(prev => [...prev, toElim]);
+
+        let toElim = question.payload?.eliminate;
+        if (!toElim) {
+          const correct = await fetchCorrectAnswer(question.id);
+          const options = roundType.optionsOf(question) || [];
+          const incorrects = options.filter((o) => o !== correct && !eliminated.includes(o));
+          toElim = incorrects[Math.floor(Math.random() * incorrects.length)];
         }
+        if (toElim) setEliminated((prev) => [...prev, toElim]);
       } catch (error) {
-        console.error("Hint failed:", error);
+        console.error('Hint failed:', error);
       }
     }
   };
@@ -189,75 +205,36 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
       try {
         await onUseConsumable('extraTime');
         setExtraTimeUsed(true);
-        setTimeLeft(prev => prev + 10);
+        setTimeLeft((prev) => prev + 10);
         playGain();
         window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 20 } }));
       } catch (error) {
-        console.error("Extra time failed:", error);
+        console.error('Extra time failed:', error);
       }
     }
   };
 
+  // Free Kick: the round is ruled in the player's favour — no peeking at the
+  // answer needed, so it works for every round type.
   const handleFreeKick = async () => {
     if (freeKicks > 0 && !freeKickUsed && !isPaused && onUseConsumable) {
       try {
         await onUseConsumable('freeKicks');
         setFreeKickUsed(true);
+        freeKickRef.current = true;
         playGain();
         window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 40 } }));
-        
-        const correct = await fetchCorrectAnswer(question.id);
-        submitAndReveal(correct);
+        submitAndReveal(null);
       } catch (error) {
-        console.error("Free Kick failed:", error);
+        console.error('Free Kick failed:', error);
       }
     }
-  };
-
-  const getOptionClass = (opt) => {
-    if (eliminatedOptions.includes(opt)) {
-      return 'bg-white/5 border-white/5 opacity-20 pointer-events-none scale-95';
-    }
-
-    if (!isPaused) return 'bg-white/10 hover:bg-white/20 border-white/20';
-
-    // Submitted, waiting for the server to reveal the answer
-    if (!correctAnswer) {
-      if (opt === selectedOption) {
-        return 'bg-white/20 border-fifa-neon animate-pulse';
-      }
-      return 'bg-white/5 border-white/10 opacity-50';
-    }
-
-    // After an overturn, the player's pick is the one ruled correct.
-    if (overturned) {
-      if (opt === selectedOption) {
-        return 'bg-green-500 text-white border-green-500 shadow-[0_0_8px_rgba(34,197,94,0.2)]';
-      }
-      if (opt === correctAnswer) {
-        return 'bg-white/5 border-fifa-neon/40 opacity-70';
-      }
-      return 'bg-white/5 border-white/10 opacity-50';
-    }
-
-    if (opt === correctAnswer) {
-      return 'bg-green-500 text-white border-green-500 shadow-[0_0_8px_rgba(34,197,94,0.2)]';
-    }
-
-    if (opt === selectedOption && opt !== correctAnswer) {
-      return 'bg-red-500 text-white border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.2)]';
-    }
-
-    return 'bg-white/5 border-white/10 opacity-50';
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Background glow removed, handled by DancingBackground globally */}
-
       <BrandHeader isHero={false} />
 
-      {/* Absolute Question Counter */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
         <span className="text-3xl font-black text-white tracking-widest drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]">
           {currentIndex + 1} / {total}
@@ -272,9 +249,15 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
       </button>
 
       <div className="w-full max-w-md z-10 flex flex-col h-full pt-16">
-        {/* Top Bar (Streak) */}
+        {/* Round type badge — the "surprise" reveal of what game this is */}
+        <div className="flex justify-center mb-2">
+          <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] font-black uppercase tracking-[0.2em] text-fifa-neon">
+            {roundType.icon} {roundType.label}
+          </span>
+        </div>
+
         {streak > 0 && (
-          <div className="flex justify-center mb-4 pt-4">
+          <div className="flex justify-center mb-4">
             <div
               className={`px-4 py-2 rounded-full font-black flex items-center transition-all duration-300 ${
                 streak >= 7
@@ -290,31 +273,23 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
         )}
 
         {/* Centered Timer */}
-        <div className={`flex justify-center mb-3 ${streak === 0 ? 'pt-8' : ''}`}>
+        <div className={`flex justify-center mb-3 ${streak === 0 ? 'pt-2' : ''}`}>
           <div className={`font-black text-3xl transition-colors duration-500 ${timeLeft <= 3 ? 'text-red-500 animate-fast-pulse' : timeLeft <= 7 ? 'text-yellow-400' : 'text-fifa-neon'}`}>
             {timeLeft}s
           </div>
         </div>
 
         {/* Timer Bar */}
-        <div className={`w-4/5 max-w-xs mx-auto h-3 bg-white/10 rounded-full mb-10 overflow-hidden ${timeLeft <= 3 ? 'animate-fast-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]' : ''}`}>
+        <div className={`w-4/5 max-w-xs mx-auto h-3 bg-white/10 rounded-full mb-6 overflow-hidden ${timeLeft <= 3 ? 'animate-fast-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]' : ''}`}>
           <div
             className={`h-full transition-all duration-1000 ease-linear ${timeLeft <= 3 ? 'bg-red-500' : timeLeft <= 7 ? 'bg-yellow-400' : 'bg-gradient-to-r from-fifa-green to-fifa-neon'}`}
-            style={{ width: `${(timeLeft / 15) * 100}%` }}
+            style={{ width: `${(timeLeft / duration) * 100}%` }}
           ></div>
         </div>
 
-        {/* Question Area */}
         <div className="flex-grow flex flex-col justify-center">
-          <div className="mb-6">
-            <h2 className="text-3xl font-black text-white leading-tight text-center">
-              {question.text}
-            </h2>
-          </div>
-
-          {/* Info and Consumables Bar */}
-          <div className="flex flex-wrap gap-2 mt-4 mb-2 justify-center items-center">
-
+          {/* Consumables Bar */}
+          <div className="flex flex-wrap gap-2 mb-4 justify-center items-center">
             {varTokens > 0 && !varUsed && (
               <div className="px-3 py-2 rounded-xl bg-sky-500/15 border border-sky-400/40 flex items-center gap-1.5" title="VAR Review available">
                 <Tv className="w-4 h-4 text-sky-300" />
@@ -322,17 +297,19 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
               </div>
             )}
 
-            <button
-              onClick={handleHint}
-              disabled={hints < 1 || hintUsed || isPaused}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 font-black text-xs transition-colors ${
-                hints > 0 && !hintUsed && !isPaused
-                  ? 'bg-amber-400/20 border-amber-400 text-amber-300 hover:bg-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.2)]'
-                  : 'bg-white/5 border-white/10 text-gray-500 opacity-50 cursor-not-allowed'
-              }`}
-            >
-              <Search className="w-4 h-4" /> Scout (×{hints})
-            </button>
+            {hintApplies && (
+              <button
+                onClick={handleHint}
+                disabled={hints < 1 || hintUsed || isPaused}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 font-black text-xs transition-colors ${
+                  hints > 0 && !hintUsed && !isPaused
+                    ? 'bg-amber-400/20 border-amber-400 text-amber-300 hover:bg-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.2)]'
+                    : 'bg-white/5 border-white/10 text-gray-500 opacity-50 cursor-not-allowed'
+                }`}
+              >
+                <Search className="w-4 h-4" /> Scout (×{hints})
+              </button>
+            )}
             <button
               onClick={handleExtraTime}
               disabled={extraTime < 1 || extraTimeUsed || isPaused}
@@ -357,24 +334,18 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
             </button>
           </div>
 
-          {/* Options */}
-          <div className="space-y-4 mt-6">
-            {options.map((opt, idx) => (
-              <button
-                key={idx}
-                onClick={() => submitAndReveal(opt)}
-                disabled={isPaused || eliminatedOptions.includes(opt)}
-                className={`relative w-full p-5 rounded-2xl border-2 text-left font-bold text-lg transition-all duration-300 transform active:scale-[0.98] ${getOptionClass(opt)}`}
-              >
-                {opt}
-                {overturned && opt === selectedOption && (
-                  <span className="absolute -top-2.5 right-3 bg-sky-400 text-black text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded rotate-2 shadow-lg">
-                    📺 Overturned
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          {children({
+            question,
+            locked: isPaused,
+            answer,
+            choice,
+            score,
+            overturned,
+            submit: submitAndReveal,
+            timeLeft,
+            duration,
+            eliminated
+          })}
         </div>
       </div>
 
@@ -413,8 +384,6 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
         </div>
       )}
 
-
-
       {showQuitModal && (
         <QuitModal
           onConfirm={onForfeit}
@@ -425,4 +394,4 @@ const GameScreen = ({ question, currentIndex, total, onSubmitAnswer, onAnswer, o
   );
 };
 
-export default GameScreen;
+export default RoundShell;

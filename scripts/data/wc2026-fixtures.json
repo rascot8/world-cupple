@@ -1,0 +1,193 @@
+{
+  "groups": {
+    "A": ["Mexico", "South Africa", "South Korea", "Czechia"],
+    "B": ["Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland"],
+    "C": ["Brazil", "Morocco", "Haiti", "Scotland"],
+    "D": ["United States", "Paraguay", "Australia", "Türkiye"],
+    "E": ["Germany", "Curaçao", "Ivory Coast", "Ecuador"],
+    "F": ["Netherlands", "Japan", "Sweden", "Tunisia"],
+    "G": ["Belgium", "Egypt", "Iran", "New Zealand"],
+    "H": ["Spain", "Cape Verde", "Saudi Arabia", "Uruguay"],
+    "I": ["France", "Senegal", "Iraq", "Norway"],
+    "J": ["Argentina", "Algeria", "Austria", "Jordan"],
+    "K": ["Portugal", "DR Congo", "Uzbekistan", "Colombia"],
+    "L": ["England", "Croatia", "Ghana", "Panama"]
+  },
+  "2026-06-11": [
+    { "home": "Mexico", "away": "South Africa", "stage": "Group A", "venue": "Mexico City" },
+    { "home": "South Korea", "away": "Czechia", "stage": "Group A", "venue": "Zapopan" }
+  ],
+  "2026-06-12": [
+    { "home": "Canada", "away": "Bosnia and Herzegovina", "stage": "Group B", "venue": "Toronto" },
+    { "home": "United States", "away": "Paraguay", "stage": "Group D", "venue": "Inglewood" }
+  ],
+  "2026-06-13": [
+    { "home": "Qatar", "away": "Switzerland", "stage": "Group B", "venue": "Santa Clara" },
+    { "home": "Brazil", "away": "Morocco", "stage": "Group C", "venue": "East Rutherford" },
+    { "home": "Haiti", "away": "Scotland", "stage": "Group C", "venue": "Foxborough" },
+    { "home": "Australia", "away": "Türkiye", "stage": "Group D", "venue": "Vancouver" }
+  ],
+  "2026-06-14": [
+    { "home": "Germany", "away": "Curaçao", "stage": "Group E", "venue": "Houston" },
+    { "home": "Ivory Coast", "away": "Ecuador", "stage": "Group E", "venue": "Philadelphia" },
+    { "home": "Netherlands", "away": "Japan", "stage": "Group F", "venue": "Arlington" },
+    { "home": "Sweden", "away": "Tunisia", "stage": "Group F", "venue": "Guadalupe" }
+  ],
+  "2026-06-15": [
+    { "home": "Spain", "away": "Cape Verde", "stage": "Group H", "venue": "Atlanta" },
+    { "home": "Saudi Arabia", "away": "Uruguay", "stage": "Group H", "venue": "Miami Gardens" },
+    { "home": "Belgium", "away": "Egypt", "stage": "Group G", "venue": "Seattle" },
+    { "home": "Iran", "away": "New Zealand", "stage": "Group G", "venue": "Inglewood" }
+  ],
+  "2026-06-16": [
+    { "home": "France", "away": "Senegal", "stage": "Group I", "venue": "East Rutherford" },
+    { "home": "Iraq", "away": "Norway", "stage": "Group I", "venue": "Foxborough" },
+    { "home": "Argentina", "away": "Algeria", "stage": "Group J", "venue": "Kansas City" },
+    { "home": "Austria", "away": "Jordan", "stage": "Group J", "venue": "Santa Clara" }
+  ],
+  "2026-06-17": [
+    { "home": "Portugal", "away": "DR Congo", "stage": "Group K", "venue": "Houston" },
+    { "home": "Uzbekistan", "away": "Colombia", "stage": "Group K", "venue": "Mexico City" },
+    { "home": "England", "away": "Croatia", "stage": "Group L", "venue": "Arlington" },
+    { "home": "Ghana", "away": "Panama", "stage": "Group L", "venue": "Toronto" }
+  ],
+  "2026-06-18": [
+    { "home": "Czechia", "away": "South Africa", "stage": "Group A", "venue": "Atlanta" },
+    { "home": "Mexico", "away": "South Korea", "stage": "Group A", "venue": "Zapopan" },
+    { "home": "Switzerland", "away": "Bosnia and Herzegovina", "stage": "Group B", "venue": "Inglewood" },
+    { "home": "Canada", "away": "Qatar", "stage": "Group B", "venue": "Vancouver" }
+  ],
+  "2026-06-19": [
+    { "home": "United States", "away": "Australia", "stage": "Group D", "venue": "Seattle" },
+    { "home": "Türkiye", "away": "Paraguay", "stage": "Group D", "venue": "Santa Clara" },
+    { "home": "Scotland", "away": "Morocco", "stage": "Group C", "venue": "Foxborough" },
+    { "home": "Brazil", "away": "Haiti", "stage": "Group C", "venue": "Philadelphia" }
+  ],
+  "2026-06-20": [
+    { "home": "Netherlands", "away": "Sweden", "stage": "Group F", "venue": "Houston" },
+    { "home": "Tunisia", "away": "Japan", "stage": "Group F", "venue": "Guadalupe" },
+    { "home": "Germany", "away": "Ivory Coast", "stage": "Group E", "venue": "Toronto" },
+    { "home": "Ecuador", "away": "Curaçao", "stage": "Group E", "venue": "Kansas City" }
+  ],
+  "2026-06-21": [
+    { "home": "Spain", "away": "Saudi Arabia", "stage": "Group H", "venue": "Atlanta" },
+    { "home": "Uruguay", "away": "Cape Verde", "stage": "Group H", "venue": "Miami Gardens" },
+    { "home": "Belgium", "away": "Iran", "stage": "Group G", "venue": "Inglewood" },
+    { "home": "New Zealand", "away": "Egypt", "stage": "Group G", "venue": "Vancouver" }
+  ],
+  "2026-06-22": [
+    { "home": "Argentina", "away": "Austria", "stage": "Group J", "venue": "Arlington" },
+    { "home": "Jordan", "away": "Algeria", "stage": "Group J", "venue": "Santa Clara" },
+    { "home": "France", "away": "Iraq", "stage": "Group I", "venue": "Philadelphia" },
+    { "home": "Norway", "away": "Senegal", "stage": "Group I", "venue": "East Rutherford" }
+  ],
+  "2026-06-23": [
+    { "home": "Portugal", "away": "Uzbekistan", "stage": "Group K", "venue": "Houston" },
+    { "home": "Colombia", "away": "DR Congo", "stage": "Group K", "venue": "Zapopan" },
+    { "home": "England", "away": "Ghana", "stage": "Group L", "venue": "Foxborough" },
+    { "home": "Panama", "away": "Croatia", "stage": "Group L", "venue": "Toronto" }
+  ],
+  "2026-06-24": [
+    { "home": "Czechia", "away": "Mexico", "stage": "Group A", "venue": "Mexico City" },
+    { "home": "South Africa", "away": "South Korea", "stage": "Group A", "venue": "Guadalupe" },
+    { "home": "Switzerland", "away": "Canada", "stage": "Group B", "venue": "Vancouver" },
+    { "home": "Bosnia and Herzegovina", "away": "Qatar", "stage": "Group B", "venue": "Seattle" },
+    { "home": "Scotland", "away": "Brazil", "stage": "Group C", "venue": "Miami Gardens" },
+    { "home": "Morocco", "away": "Haiti", "stage": "Group C", "venue": "Atlanta" }
+  ],
+  "2026-06-25": [
+    { "home": "Ecuador", "away": "Germany", "stage": "Group E", "venue": "East Rutherford" },
+    { "home": "Curaçao", "away": "Ivory Coast", "stage": "Group E", "venue": "Philadelphia" },
+    { "home": "Japan", "away": "Sweden", "stage": "Group F", "venue": "Arlington" },
+    { "home": "Tunisia", "away": "Netherlands", "stage": "Group F", "venue": "Kansas City" },
+    { "home": "Türkiye", "away": "United States", "stage": "Group D", "venue": "Inglewood" },
+    { "home": "Paraguay", "away": "Australia", "stage": "Group D", "venue": "Santa Clara" }
+  ],
+  "2026-06-26": [
+    { "home": "Norway", "away": "France", "stage": "Group I", "venue": "Foxborough" },
+    { "home": "Senegal", "away": "Iraq", "stage": "Group I", "venue": "Toronto" },
+    { "home": "Cape Verde", "away": "Saudi Arabia", "stage": "Group H", "venue": "Houston" },
+    { "home": "Uruguay", "away": "Spain", "stage": "Group H", "venue": "Zapopan" },
+    { "home": "Egypt", "away": "Iran", "stage": "Group G", "venue": "Seattle" },
+    { "home": "New Zealand", "away": "Belgium", "stage": "Group G", "venue": "Vancouver" }
+  ],
+  "2026-06-27": [
+    { "home": "Panama", "away": "England", "stage": "Group L", "venue": "East Rutherford" },
+    { "home": "Croatia", "away": "Ghana", "stage": "Group L", "venue": "Philadelphia" },
+    { "home": "Colombia", "away": "Portugal", "stage": "Group K", "venue": "Miami Gardens" },
+    { "home": "DR Congo", "away": "Uzbekistan", "stage": "Group K", "venue": "Atlanta" },
+    { "home": "Algeria", "away": "Austria", "stage": "Group J", "venue": "Kansas City" },
+    { "home": "Jordan", "away": "Argentina", "stage": "Group J", "venue": "Arlington" }
+  ],
+  "2026-06-28": [
+    { "home": "Runner-up Group A", "away": "Runner-up Group B", "stage": "Round of 32", "venue": "Inglewood" }
+  ],
+  "2026-06-29": [
+    { "home": "Winner Group E", "away": "Third-place team", "stage": "Round of 32", "venue": "Foxborough" },
+    { "home": "Winner Group F", "away": "Runner-up Group C", "stage": "Round of 32", "venue": "Guadalupe" },
+    { "home": "Winner Group C", "away": "Runner-up Group F", "stage": "Round of 32", "venue": "Houston" }
+  ],
+  "2026-06-30": [
+    { "home": "Winner Group I", "away": "Third-place team", "stage": "Round of 32", "venue": "East Rutherford" },
+    { "home": "Runner-up Group E", "away": "Runner-up Group I", "stage": "Round of 32", "venue": "Arlington" },
+    { "home": "Winner Group A", "away": "Third-place team", "stage": "Round of 32", "venue": "Mexico City" }
+  ],
+  "2026-07-01": [
+    { "home": "Winner Group L", "away": "Third-place team", "stage": "Round of 32", "venue": "Atlanta" },
+    { "home": "Winner Group D", "away": "Third-place team", "stage": "Round of 32", "venue": "Santa Clara" },
+    { "home": "Winner Group G", "away": "Third-place team", "stage": "Round of 32", "venue": "Seattle" }
+  ],
+  "2026-07-02": [
+    { "home": "Runner-up Group K", "away": "Runner-up Group L", "stage": "Round of 32", "venue": "Toronto" },
+    { "home": "Winner Group H", "away": "Runner-up Group J", "stage": "Round of 32", "venue": "Inglewood" },
+    { "home": "Winner Group B", "away": "Third-place team", "stage": "Round of 32", "venue": "Vancouver" }
+  ],
+  "2026-07-03": [
+    { "home": "Winner Group J", "away": "Runner-up Group H", "stage": "Round of 32", "venue": "Miami Gardens" },
+    { "home": "Winner Group K", "away": "Third-place team", "stage": "Round of 32", "venue": "Kansas City" },
+    { "home": "Runner-up Group D", "away": "Runner-up Group G", "stage": "Round of 32", "venue": "Arlington" }
+  ],
+  "2026-07-04": [
+    { "home": "Winner Match 74", "away": "Winner Match 77", "stage": "Round of 16", "venue": "Philadelphia" },
+    { "home": "Winner Match 73", "away": "Winner Match 75", "stage": "Round of 16", "venue": "Houston" }
+  ],
+  "2026-07-05": [
+    { "home": "Winner Match 76", "away": "Winner Match 78", "stage": "Round of 16", "venue": "East Rutherford" },
+    { "home": "Winner Match 79", "away": "Winner Match 80", "stage": "Round of 16", "venue": "Mexico City" }
+  ],
+  "2026-07-06": [
+    { "home": "Winner Match 83", "away": "Winner Match 84", "stage": "Round of 16", "venue": "Arlington" },
+    { "home": "Winner Match 81", "away": "Winner Match 82", "stage": "Round of 16", "venue": "Seattle" }
+  ],
+  "2026-07-07": [
+    { "home": "Winner Match 86", "away": "Winner Match 88", "stage": "Round of 16", "venue": "Atlanta" },
+    { "home": "Winner Match 85", "away": "Winner Match 87", "stage": "Round of 16", "venue": "Vancouver" }
+  ],
+  "2026-07-08": [],
+  "2026-07-09": [
+    { "home": "Winner Match 89", "away": "Winner Match 90", "stage": "Quarter-final", "venue": "Foxborough" }
+  ],
+  "2026-07-10": [
+    { "home": "Winner Match 93", "away": "Winner Match 94", "stage": "Quarter-final", "venue": "Inglewood" }
+  ],
+  "2026-07-11": [
+    { "home": "Winner Match 91", "away": "Winner Match 92", "stage": "Quarter-final", "venue": "Miami Gardens" },
+    { "home": "Winner Match 95", "away": "Winner Match 96", "stage": "Quarter-final", "venue": "Kansas City" }
+  ],
+  "2026-07-12": [],
+  "2026-07-13": [],
+  "2026-07-14": [
+    { "home": "Winner Match 97", "away": "Winner Match 98", "stage": "Semi-final", "venue": "Arlington" }
+  ],
+  "2026-07-15": [
+    { "home": "Winner Match 99", "away": "Winner Match 100", "stage": "Semi-final", "venue": "Atlanta" }
+  ],
+  "2026-07-16": [],
+  "2026-07-17": [],
+  "2026-07-18": [
+    { "home": "Loser Match 101", "away": "Loser Match 102", "stage": "Third place", "venue": "Miami Gardens" }
+  ],
+  "2026-07-19": [
+    { "home": "Winner Match 101", "away": "Winner Match 102", "stage": "Final", "venue": "East Rutherford" }
+  ]
+}

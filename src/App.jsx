@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
-import GameScreen from './components/GameScreen';
+import RoundRouter from './components/rounds/RoundRouter';
 import MatchDayPickScreen from './components/MatchDayPickScreen';
 import ResultsScreen from './components/ResultsScreen';
 import LeaderboardScreen from './components/LeaderboardScreen';
@@ -23,7 +23,8 @@ import LiveTicker from './components/LiveTicker';
 import { AudioProvider } from './contexts/AudioContext';
 
 import { getTodayUTCString } from './utils/dailySeed';
-import { fetchTodayQuiz, fetchQuestion, fetchCorrectAnswer, fetchTodaySubmissions, submitDailyAnswer } from './utils/quizService';
+import { fetchTodayQuiz, fetchQuestion, fetchAnswerDoc, fetchTodaySubmissions, submitDailyAnswer } from './utils/quizService';
+import { gradeRound } from './utils/grading';
 import { placePick } from './utils/picksService';
 import { calculateDailyFPChange, getRankForFP } from './utils/ranking';
 import { evaluateAchievements } from './utils/achievements';
@@ -183,15 +184,18 @@ const App = () => {
 
   const finishQuiz = async (finalScore, quiz, stats = { maxStreak: 0, fastAnswers: 0 }) => {
     const isForfeit = finalScore === 'forfeit';
+    // Rounds can award partial credit (closest guess, timeline…), so the raw
+    // score is a float — the FP curve and milestones run on the rounded value.
     const actualScore = isForfeit ? 0 : finalScore;
-    
+    const roundedScore = isForfeit ? 0 : Math.round(actualScore);
+
     setScore(actualScore);
     const today = getTodayUTCString();
 
     // Don't award FP twice if the quiz was already completed today
     if (userData?.lastPlayedDate !== today) {
       const isVip = !!userData?.vip;
-      const baseFpChange = isForfeit ? -50 : calculateDailyFPChange(actualScore);
+      const baseFpChange = isForfeit ? -50 : calculateDailyFPChange(roundedScore);
       const fpChange = isForfeit ? -50 : applyVipFp(baseFpChange, isVip); // Captain's Club: +50% on wins
 
       // Consecutive-day streak (Streak Shields bridge one missed day)
@@ -228,14 +232,14 @@ const App = () => {
         freeKicks: (userData?.freeKicks || 0) + consumableGrants.freeKicks
       };
 
-      if (finalScore === 10) {
+      if (actualScore === 10) {
         newUserData.perfectMatchesCount = (userData?.perfectMatchesCount || 0) + 1;
       }
 
       // Evaluate Achievements
       const newlyUnlocked = evaluateAchievements(newUserData, {
         isDaily: true,
-        score: finalScore,
+        score: roundedScore,
         maxStreak: stats.maxStreak,
         fastAnswers: stats.fastAnswers,
         rankName: getRankForFP(newTotalFP).name
@@ -313,8 +317,8 @@ const App = () => {
         // score — even once settled (which would otherwise leak an answer).
         const q = await fetchQuestion(qid);
         if (q?.type !== 'pick') {
-          const correct = await fetchCorrectAnswer(qid);
-          if (submitted[qid] === correct || varCredit === qid) startScore++;
+          const answerDoc = await fetchAnswerDoc(qid);
+          startScore += varCredit === qid ? 1 : gradeRound(q?.type, submitted[qid], answerDoc);
         }
         startIndex++;
       }
@@ -381,8 +385,11 @@ const App = () => {
     }
   };
 
-  const handleAnswer = async (isCorrect, additionalStats = {}) => {
+  // roundScore is 0..1 (partial credit possible); "correct" for streak and
+  // achievement purposes means at least half credit.
+  const handleAnswer = async (roundScore, additionalStats = {}) => {
     const { fastAnswer } = additionalStats;
+    const isCorrect = roundScore >= 0.5;
 
     const newCurrentStreak = isCorrect ? matchStats.currentStreak + 1 : 0;
     const newMaxStreak = Math.max(matchStats.maxStreak, newCurrentStreak);
@@ -394,7 +401,7 @@ const App = () => {
       fastAnswers: newFastAnswers
     });
 
-    const newScore = score + (isCorrect ? 1 : 0);
+    const newScore = score + roundScore;
 
     if (currentQuestionIndex + 1 < dailyQuiz.questionIds.length) {
       setScore(newScore);
@@ -470,7 +477,7 @@ const App = () => {
       )}
 
       {gameState === 'kickoff_daily' && (
-        <KickoffScreen onFinish={() => setGameState('playing')} />
+        <KickoffScreen onFinish={() => setGameState('playing')} theme={dailyQuiz?.theme} />
       )}
 
       {gameState === 'playing' && dailyQuiz && (
@@ -487,7 +494,7 @@ const App = () => {
               t={t}
             />
           ) : (
-            <GameScreen
+            <RoundRouter
               question={currentQuestion}
               currentIndex={currentQuestionIndex}
               total={dailyQuiz.questionIds.length}

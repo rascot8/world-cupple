@@ -24,7 +24,7 @@ export const fetchTodayQuiz = async () => {
   if (data.status !== 'published' || !Array.isArray(data.questionIds) || data.questionIds.length === 0) {
     return null;
   }
-  return { date, questionIds: data.questionIds };
+  return { date, questionIds: data.questionIds, theme: data.theme || null };
 };
 
 /**
@@ -46,9 +46,20 @@ export const fetchCorrectAnswer = async (questionId) => {
 };
 
 /**
- * Lock in the user's answer for a daily question (immutable, enforced by
- * rules), then fetch the now-unlocked correct answer.
- * Pass choice = null for a timeout (locks the question with an empty answer).
+ * The full answer doc for a round. Shape depends on the round type
+ * (correctAnswer / accepted / correctValue / correctOrder…) — see grading.js.
+ * Same rule lock as fetchCorrectAnswer: readable only after the user's
+ * dailyAnswers doc exists (or for practice-pool questions).
+ */
+export const fetchAnswerDoc = async (questionId) => {
+  const snap = await getDoc(doc(db, 'questionAnswers', questionId));
+  return snap.exists() ? snap.data() : null;
+};
+
+/**
+ * Lock in the user's answer for a daily round (immutable, enforced by
+ * rules), then fetch the now-unlocked answer doc.
+ * Pass choice = null for a timeout (locks the round with an empty answer).
  */
 export const submitDailyAnswer = async (uid, quizDate, questionId, choice) => {
   try {
@@ -62,7 +73,7 @@ export const submitDailyAnswer = async (uid, quizDate, questionId, choice) => {
     // The answer is already unlocked in that case, so just continue.
     console.warn('Answer already locked in:', error?.code || error);
   }
-  return fetchCorrectAnswer(questionId);
+  return fetchAnswerDoc(questionId);
 };
 
 /**
