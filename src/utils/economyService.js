@@ -46,7 +46,7 @@ export const purchaseCoins = async (uid, userData, bundle) => {
 };
 
 /** Spend coins on a store item (optionally at the Daily Deal price). */
-export const purchaseItem = async (uid, userData, itemId, priceOverride = null) => {
+export const purchaseItem = async (uid, userData, itemId, priceOverride = null, isDailyDeal = false) => {
   const item = STORE_ITEMS_BY_ID[itemId];
   if (!item) throw new Error('Unknown item.');
   const cost = priceOverride ?? item.coins;
@@ -56,6 +56,9 @@ export const purchaseItem = async (uid, userData, itemId, priceOverride = null) 
     coins: coins - cost,
     [item.field]: (userData[item.field] || 0) + 1
   };
+  if (isDailyDeal) {
+    partial.dailyDealBoughtDate = getTodayUTCString();
+  }
   await write(uid, partial);
   return partial;
 };

@@ -269,7 +269,7 @@ export const rollPack = (packId, ownedMap = {}, packsSinceLegendary = 0) => {
 
 // ——— Album helpers ———
 
-export const PAGE_REWARD_COINS = 120;
+export const PAGE_REWARD_COINS = 500;
 
 export const albumProgress = (ownedMap = {}) => {
   const ownedIds = STICKERS.filter((s) => ownedMap[s.id] > 0);

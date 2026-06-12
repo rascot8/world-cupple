@@ -32,6 +32,7 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
   const deal = getDailyDeal(today);
   const coins = userData?.coins || 0;
   const purchased = userData?.purchasedBundles || [];
+  const dealBoughtToday = userData?.dailyDealBoughtDate === today;
 
   useEffect(() => {
     const t = setInterval(() => setCountdown(msUntilUtcMidnight()), 1000);
@@ -45,12 +46,12 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
     }
   };
 
-  const buyItem = async (item, dealPrice = null) => {
+  const buyItem = async (item, dealPrice = null, isDailyDeal = false) => {
     setError('');
     setBusy(item.id);
     playPurchase();
     try {
-      const partial = await purchaseItem(uid, userData, item.id, dealPrice);
+      const partial = await purchaseItem(uid, userData, item.id, dealPrice, isDailyDeal);
       onUpdateUser(partial);
       flashBought(dealPrice !== null ? `deal_${item.id}` : item.id);
     } catch (e) {
@@ -167,11 +168,11 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
               </div>
             </div>
             <button
-              onClick={() => buyItem(deal.item, deal.dealCoins)}
-              disabled={busy === deal.item.id || coins < deal.dealCoins}
+              onClick={() => buyItem(deal.item, deal.dealCoins, true)}
+              disabled={dealBoughtToday || busy === deal.item.id || coins < deal.dealCoins}
               className="shrink-0 ml-3 px-4 py-2 rounded-xl bg-red-500 text-white font-black text-sm hover:bg-red-400 transition-colors disabled:opacity-40 flex flex-col items-center leading-tight"
             >
-              {justBought === `deal_${deal.item.id}` ? <Check className="w-5 h-5" /> : (
+              {dealBoughtToday ? 'BOUGHT ✓' : justBought === `deal_${deal.item.id}` ? <Check className="w-5 h-5" /> : (
                 <>
                   <span className="line-through text-[9px] text-red-200 tabular-nums">🪙{deal.item.coins}</span>
                   <span className="tabular-nums">🪙{deal.dealCoins}</span>
@@ -240,9 +241,15 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
                 </div>
               );
             })}
+          </div>
+        </section>
 
-            {/* Sticker Packs */}
-            <div className="grid grid-cols-2 gap-3 mt-4">
+        {/* ——— Pack store ——— */}
+        <section>
+          <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-fifa-neon" /> The Transfer Market ⚽
+          </h3>
+          <div className="grid grid-cols-2 gap-3 mt-3">
               {Object.values(PACKS).map(pack => (
                 <div key={pack.id} className="glass-panel p-3 flex flex-col items-center text-center relative overflow-hidden group">
                   <PackVisual pack={pack} className="w-16 sm:w-20 mb-3 group-hover:scale-110 transition-transform duration-300" />
@@ -268,7 +275,6 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
                 </div>
               ))}
             </div>
-          </div>
         </section>
 
         {/* Open-now shortcut when packs are sitting in the inventory */}

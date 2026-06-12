@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Settings, HelpCircle, LogOut, Trophy } from 'lucide-react';
+import { User, Settings, HelpCircle, LogOut, Trophy, Sparkles } from 'lucide-react';
 import { auth } from '../config/firebase';
 
-const ProfileDropdown = ({ onOpenProfile, onOpenRank, onOpenTutorial, onOpenSettings, onLogout }) => {
+const ProfileDropdown = ({ onOpenProfile, onOpenRank, onOpenPackOdds, onOpenTutorial, onOpenSettings, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -59,6 +59,13 @@ const ProfileDropdown = ({ onOpenProfile, onOpenRank, onOpenTutorial, onOpenSett
             >
               <Trophy className="w-4 h-4 mr-3 text-[#f1dd71]" />
               My Rank
+            </button>
+            <button 
+              onClick={() => handleMenuClick(onOpenPackOdds)}
+              className="w-full px-4 py-3 text-left text-sm font-bold text-white hover:bg-white/5 transition-colors flex items-center"
+            >
+              <Sparkles className="w-4 h-4 mr-3 text-fuchsia-400" />
+              Pack Odds
             </button>
             <button 
               onClick={() => handleMenuClick(onOpenTutorial)}

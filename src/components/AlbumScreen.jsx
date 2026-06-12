@@ -55,6 +55,7 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
       const partial = await claimPageReward(uid, userData, pageId);
       onUpdateUser(partial);
       playGain();
+      new Audio('/audio/sell.mp3').play().catch(e => console.error('Audio play failed', e));
       window.dispatchEvent(new CustomEvent('confetti-burst', { detail: { count: 80, gold: true } }));
     } catch (e) {
       setError(e.message);
@@ -188,16 +189,19 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
             <h3 className="font-black text-white uppercase tracking-wider">{pageInfo.icon} {pageInfo.name}</h3>
             <p className="text-[10px] text-gray-400 font-bold">{pageInfo.blurb}</p>
           </div>
-          {pageProgress.complete && !claimedPages.includes(activePage) && (
+          {pageProgress.complete && !claimedPages.includes(activePage) ? (
             <button
               onClick={() => handleClaimPage(activePage)}
               className="shrink-0 px-3 py-2 rounded-xl bg-gradient-to-r from-yellow-300 to-amber-500 text-black text-xs font-black uppercase tracking-wide animate-pulse-gold flex items-center gap-1"
             >
               <Coins className="w-3.5 h-3.5" /> Claim 🪙{PAGE_REWARD_COINS}
             </button>
-          )}
-          {pageProgress.complete && claimedPages.includes(activePage) && (
+          ) : pageProgress.complete && claimedPages.includes(activePage) ? (
             <span className="text-[10px] font-black text-yellow-300 uppercase tracking-wider">Complete ✓</span>
+          ) : (
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+              <Coins className="w-3.5 h-3.5 text-amber-400/50" /> Reward: 🪙{PAGE_REWARD_COINS}
+            </span>
           )}
         </div>
 

@@ -13,6 +13,7 @@ import ProfileDropdown from './ProfileDropdown';
 import ProfileModal from './ProfileModal';
 import WelcomeModal from './WelcomeModal';
 import BrandHeader from './BrandHeader';
+import PackOddsModal from './PackOddsModal';
 import MatchDayPicksSection from './MatchDayPicksSection';
 import { getDailyDeal, formatCountdown, msUntilUtcMidnight } from '../utils/economy';
 import { weekDots, getNextMilestone, getMilestoneReward } from '../utils/streaks';
@@ -28,6 +29,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
   const [showTrophyCabinet, setShowTrophyCabinet] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showPackOddsModal, setShowPackOddsModal] = useState(false);
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [copied, setCopied] = useState(false);
@@ -117,6 +119,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 pb-20 relative overflow-hidden">
       <WelcomeModal onClose={() => setShowWelcomeModal(false)} forceShow={showWelcomeModal} />
+      {showPackOddsModal && <PackOddsModal onClose={() => setShowPackOddsModal(false)} />}
 
       <div className="absolute top-6 right-6 z-50 flex items-center space-x-4">
         {userData?.isAdmin && (
@@ -133,6 +136,7 @@ const DashboardScreen = ({ onPlay, onPractice, onLeaderboard, onStore, onAlbum, 
         <ProfileDropdown
           onOpenProfile={() => setShowProfileModal(true)}
           onOpenRank={() => setShowHelpModal(true)}
+          onOpenPackOdds={() => setShowPackOddsModal(true)}
           onOpenTutorial={() => setShowWelcomeModal(true)}
           onOpenSettings={() => setShowSettingsModal(true)}
           onLogout={handleLogout}
