@@ -13,6 +13,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import { ROUND_TYPES, getRoundType } from './roundTypes';
 
 // --- Match Day Pick helpers ---
 
@@ -74,6 +75,7 @@ export const fetchQuizForEditing = async (date) => {
       ]);
       const qData = qSnap.exists() ? qSnap.data() : { text: '', options: ['', '', ''] };
       const isPick = qData.type === 'pick';
+      const answerData = aSnap.exists() ? aSnap.data() : null;
       return {
         id,
         text: qData.text || '',
@@ -81,15 +83,19 @@ export const fetchQuizForEditing = async (date) => {
         category: qData.category || '',
         difficulty: qData.difficulty || '',
         inPracticePool: qData.inPracticePool ?? false,
-        correctAnswer: aSnap.exists() ? aSnap.data().correctAnswer : '',
-        // Match Day Pick fields
+        correctAnswer: answerData?.correctAnswer || '',
         type: qData.type || 'standard',
+        // Round-type payload + full typed answer doc (anagram/timeline/etc.)
+        payload: qData.payload || {},
+        answer: !isPick && answerData ? answerData : {},
+        timerSeconds: qData.timerSeconds || null,
+        // Match Day Pick fields
         fixture: qData.fixture || '',
         locksAt: timestampToInputValue(qData.locksAt),
         odds: [qData.odds?.[0] ?? '', qData.odds?.[1] ?? '', qData.odds?.[2] ?? ''],
         // For picks, the answer doc only exists once settled — surface the result.
-        settledResult: isPick && aSnap.exists()
-          ? (aSnap.data().void ? 'void' : aSnap.data().correctAnswer)
+        settledResult: isPick && answerData
+          ? (answerData.void ? 'void' : answerData.correctAnswer)
           : null
       };
     })
@@ -99,6 +105,7 @@ export const fetchQuizForEditing = async (date) => {
     date,
     status: quiz.status || 'draft',
     availableAt: quiz.availableAt || null,
+    theme: quiz.theme || '',
     questions
   };
 };
@@ -119,43 +126,51 @@ export const dateStringToTimestamp = (date) => {
  *
  * `questions` is the editor array; correctAnswer must be one of the options.
  */
-export const saveQuiz = async (date, { status, questions }) => {
+export const saveQuiz = async (date, { status, questions, theme }) => {
   const batch = writeBatch(db);
 
   for (const q of questions) {
-    const options = q.options.map((o) => (o || '').trim());
     const isPick = q.type === 'pick';
+    const isStandard = !isPick && (!q.type || q.type === 'standard');
     const questionDoc = {
       text: (q.text || '').trim(),
-      options,
       category: (q.category || '').trim(),
       difficulty: (q.difficulty || '').trim(),
       // Daily questions (and picks) stay out of the practice pool so they can't
       // be farmed for answers; preserve whatever the question already had.
-      inPracticePool: isPick ? false : (q.inPracticePool ?? false),
+      inPracticePool: isStandard ? (q.inPracticePool ?? false) : false,
       source: 'admin',
-      type: isPick ? 'pick' : 'standard'
+      type: isPick ? 'pick' : q.type
     };
+    if (isPick || isStandard) {
+      questionDoc.options = q.options.map((o) => (o || '').trim());
+    }
     if (isPick) {
       questionDoc.fixture = (q.fixture || '').trim();
       questionDoc.locksAt = inputValueToTimestamp(q.locksAt);
       questionDoc.odds = q.odds.map((o) => Number(o) || 0);
+    } else if (!isStandard) {
+      questionDoc.payload = q.payload || {};
+      if (q.timerSeconds) questionDoc.timerSeconds = Number(q.timerSeconds);
     }
     batch.set(doc(db, 'questions', q.id), questionDoc);
 
-    // Standard questions store their answer up front. Picks have no answer
-    // until the match is over — the settlePick Cloud Function writes it.
-    if (!isPick) {
+    // Non-pick rounds store their (type-shaped) answer up front. Picks have no
+    // answer until the match is over — the settlePick Cloud Function writes it.
+    if (isStandard) {
       batch.set(doc(db, 'questionAnswers', q.id), {
         correctAnswer: (q.correctAnswer || '').trim()
       });
+    } else if (!isPick) {
+      batch.set(doc(db, 'questionAnswers', q.id), getRoundType(q.type).answerDoc(q));
     }
   }
 
   batch.set(doc(db, 'dailyQuizzes', date), {
     status,
     availableAt: dateStringToTimestamp(date),
-    questionIds: questions.map((q) => q.id)
+    questionIds: questions.map((q) => q.id),
+    ...(theme !== undefined ? { theme: (theme || '').trim() } : {})
   });
 
   await batch.commit();
@@ -188,21 +203,28 @@ export const fetchAllQuestions = async () => {
  * A blank question shell for adding a brand-new question to a day.
  * Uses a client-generated id; the doc is only created on save.
  */
-export const blankQuestion = () => ({
-  id: (crypto.randomUUID?.() || `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`).replace(/-/g, '').slice(0, 16),
-  text: '',
-  options: ['', '', ''],
-  category: '',
-  difficulty: '',
-  inPracticePool: false,
-  correctAnswer: '',
-  type: 'standard',
-  fixture: '',
-  locksAt: '',
-  odds: ['', '', ''],
-  settledResult: null,
-  isNew: true
-});
+export const blankQuestion = (type = 'standard') => {
+  const defaults = (ROUND_TYPES[type] || ROUND_TYPES.standard).blank();
+  return {
+    id: (crypto.randomUUID?.() || `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`).replace(/-/g, '').slice(0, 16),
+    text: '',
+    options: ['', '', ''],
+    category: '',
+    difficulty: '',
+    inPracticePool: false,
+    correctAnswer: '',
+    type: type === 'pick' ? 'pick' : type,
+    payload: defaults.payload || {},
+    answer: defaults.answer || {},
+    timerSeconds: null,
+    fixture: '',
+    locksAt: '',
+    odds: ['', '', ''],
+    settledResult: null,
+    isNew: true,
+    ...(defaults.options ? { options: defaults.options } : {})
+  };
+};
 
 // --- Match Day Pick settlement (admin-only Cloud Function) ---
 

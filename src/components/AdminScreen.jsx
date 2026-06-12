@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, ArrowLeft, Plus, Trash2, Search, X, Check, Loader2, Zap, Trophy, Ban } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Plus, Trash2, Search, X, Check, Loader2, Trophy, Ban } from 'lucide-react';
 import {
   fetchQuizzesInRange,
   fetchQuizForEditing,
@@ -11,6 +11,8 @@ import {
   voidPickResult
 } from '../utils/adminService';
 import { impliedChance } from '../utils/picks';
+import { ROUND_TYPES, getRoundType } from '../utils/roundTypes';
+import RoundEditor from './admin/RoundEditor';
 import { auth, db } from '../config/firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { STICKERS } from '../utils/stickers';
@@ -26,11 +28,19 @@ const toEditable = (q) => ({
   options: [q.options?.[0] || '', q.options?.[1] || '', q.options?.[2] || ''],
   correctIndex: Math.max(0, (q.options || []).indexOf(q.correctAnswer)),
   type: q.type || 'standard',
+  payload: q.payload || {},
+  answer: q.answer || {},
   fixture: q.fixture || '',
   locksAt: q.locksAt || '',
   odds: [q.odds?.[0] ?? '', q.odds?.[1] ?? '', q.odds?.[2] ?? ''],
   settledResult: q.settledResult ?? null
 });
+
+// Every round type an admin can assign to a slot (the 10 timed games + picks).
+const TYPE_CHOICES = [
+  ...Object.entries(ROUND_TYPES).map(([id, def]) => ({ id, label: `${def.icon} ${def.label}` })),
+  { id: 'pick', label: '⚡ Match Day Pick' }
+];
 
 const AdminScreen = ({ onExit }) => {
   const today = new Date();
@@ -90,9 +100,9 @@ const AdminScreen = ({ onExit }) => {
     try {
       const quiz = await fetchQuizForEditing(date);
       if (!quiz) {
-        setEditing({ exists: false, status: 'draft', questions: [] });
+        setEditing({ exists: false, status: 'draft', theme: '', questions: [] });
       } else {
-        setEditing({ exists: true, status: quiz.status, questions: quiz.questions.map(toEditable) });
+        setEditing({ exists: true, status: quiz.status, theme: quiz.theme || '', questions: quiz.questions.map(toEditable) });
       }
     } catch (e) {
       console.error(e);
@@ -134,8 +144,17 @@ const AdminScreen = ({ onExit }) => {
       return { ...prev, questions };
     });
   };
-  const togglePick = (idx, isPick) =>
-    updateQuestion(idx, { type: isPick ? 'pick' : 'standard' });
+  // Switching type swaps in that type's blank payload/answer shapes while
+  // keeping the slot's text/category, so a mis-click doesn't lose everything.
+  const changeType = (idx, type) => {
+    const defaults = type === 'pick' ? { payload: {}, answer: {} } : getRoundType(type).blank();
+    updateQuestion(idx, {
+      type,
+      payload: defaults.payload || {},
+      answer: defaults.answer || {},
+      ...(defaults.options ? { options: defaults.options } : {})
+    });
+  };
 
   const removeQuestion = (idx) =>
     setEditing((prev) => ({ ...prev, questions: prev.questions.filter((_, i) => i !== idx) }));
@@ -180,24 +199,32 @@ const AdminScreen = ({ onExit }) => {
 
   const handleSave = async () => {
     setError('');
-    // Validate
+    // Validate — picks and legacy standard slots keep their checks; every
+    // other round type validates through the registry.
     for (let i = 0; i < editing.questions.length; i++) {
       const q = editing.questions[i];
-      if (!q.text.trim()) return setError(`Question ${i + 1} has no text.`);
-      if (q.options.some((o) => !o.trim())) return setError(`Question ${i + 1} has an empty option.`);
       if (q.type === 'pick') {
+        if (!q.text.trim()) return setError(`Question ${i + 1} has no text.`);
+        if (q.options.some((o) => !o.trim())) return setError(`Question ${i + 1} has an empty option.`);
         if (!q.fixture.trim()) return setError(`Pick ${i + 1} needs a fixture (e.g. "Arsenal vs Spurs").`);
         if (!q.locksAt) return setError(`Pick ${i + 1} needs a lock time (kickoff).`);
         if (q.odds.some((o) => !(Number(o) > 1))) return setError(`Pick ${i + 1} needs odds greater than 1 for every option.`);
+      } else {
+        const def = getRoundType(q.type);
+        const candidate = q.type === 'standard'
+          ? { ...q, answer: { correctAnswer: q.options[q.correctIndex] } }
+          : q;
+        const problem = def.validate(candidate);
+        if (problem) return setError(`Round ${i + 1} (${def.label}) ${problem}.`);
       }
     }
     const questions = editing.questions.map((q) => ({
       ...q,
-      correctAnswer: q.options[q.correctIndex]
+      correctAnswer: q.type === 'standard' ? q.options[q.correctIndex] : (q.answer?.correctAnswer || '')
     }));
     setSaving(true);
     try {
-      await saveQuiz(selectedDate, { status: editing.status, questions });
+      await saveQuiz(selectedDate, { status: editing.status, questions, theme: editing.theme });
       await loadMonth();
       setEditing((prev) => ({ ...prev, exists: true }));
     } catch (e) {
@@ -357,6 +384,16 @@ const AdminScreen = ({ onExit }) => {
                   Correct answers are never sent to players until they lock in their pick.
                 </p>
 
+                <label className="flex items-center gap-3 mb-5">
+                  <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">Day theme</span>
+                  <input
+                    value={editing.theme || ''}
+                    onChange={(e) => setEditing((p) => ({ ...p, theme: e.target.value }))}
+                    placeholder='Shown on kickoff, e.g. "Brazil vs Morocco — MetLife Stadium"'
+                    className="flex-grow p-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm focus:outline-none focus:border-fifa-green"
+                  />
+                </label>
+
                 <div className="space-y-4">
                   {editing.questions.map((q, idx) => (
                     <div key={q.id} className="bg-white/5 border border-white/10 rounded-2xl p-4">
@@ -373,22 +410,18 @@ const AdminScreen = ({ onExit }) => {
                         </button>
                       </div>
 
-                      {/* Question type toggle: standard quiz answer vs Match Day Pick */}
+                      {/* Round type: 10 timed game types + Match Day Pick */}
                       <div className="flex items-center gap-2 pl-7 mb-3">
-                        <button
-                          onClick={() => togglePick(idx, false)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors
-                            ${q.type !== 'pick' ? 'bg-fifa-green/20 text-fifa-green border border-fifa-green/40' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+                        <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Game type</span>
+                        <select
+                          value={q.type}
+                          onChange={(e) => changeType(idx, e.target.value)}
+                          className="p-2 rounded-lg bg-black/30 border border-fifa-neon/30 text-fifa-neon text-xs font-bold focus:outline-none focus:border-fifa-neon"
                         >
-                          Standard
-                        </button>
-                        <button
-                          onClick={() => togglePick(idx, true)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center transition-colors
-                            ${q.type === 'pick' ? 'bg-fifa-neon/20 text-fifa-neon border border-fifa-neon/40' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
-                        >
-                          <Zap className="w-3.5 h-3.5 mr-1.5" /> Match Day Pick
-                        </button>
+                          {TYPE_CHOICES.map((c) => (
+                            <option key={c.id} value={c.id} className="bg-fifa-dark text-white">{c.label}</option>
+                          ))}
+                        </select>
                       </div>
 
                       {q.type === 'pick' ? (
@@ -475,7 +508,7 @@ const AdminScreen = ({ onExit }) => {
                             )
                           )}
                         </div>
-                      ) : (
+                      ) : q.type === 'standard' ? (
                         <div className="space-y-2 pl-7">
                           {q.options.map((opt, oi) => (
                             <label key={oi} className="flex items-center gap-3">
@@ -496,6 +529,10 @@ const AdminScreen = ({ onExit }) => {
                             </label>
                           ))}
                           <p className="text-[11px] text-gray-500 pt-1">Select the radio for the correct answer.</p>
+                        </div>
+                      ) : (
+                        <div className="pl-7">
+                          <RoundEditor q={q} onChange={(patch) => updateQuestion(idx, patch)} />
                         </div>
                       )}
 

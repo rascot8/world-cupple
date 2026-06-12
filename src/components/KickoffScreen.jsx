@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAudio } from '../contexts/AudioContext';
 import BrandHeader from './BrandHeader';
 
-const KickoffScreen = ({ onFinish }) => {
+const KickoffScreen = ({ onFinish, theme }) => {
   const [countdown, setCountdown] = useState(10);
   const { playWhistle } = useAudio();
   const finishedRef = useRef(false);
@@ -49,6 +49,12 @@ const KickoffScreen = ({ onFinish }) => {
         <p className="mt-8 text-xl font-bold text-gray-300 uppercase tracking-widest animate-pulse">
           Match Starting...
         </p>
+
+        {theme && (
+          <p className="mt-3 max-w-xs text-center text-sm font-bold text-fifa-neon/90">
+            🏟️ Today’s theme: {theme}
+          </p>
+        )}
 
         <button
           onClick={() => { playWhistle(); finish(); }}
