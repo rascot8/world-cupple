@@ -36,6 +36,7 @@ const argValue = (name) => {
   return i !== -1 ? args[i + 1] : null;
 };
 const DRY_RUN = args.includes('--dry-run');
+const VERBOSE = args.includes('--verbose');
 const FORCE_QUIZZES = args.includes('--force-quizzes');
 
 const FIXTURES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'wc2026-fixtures.json'), 'utf8'));
@@ -159,11 +160,18 @@ const genAnagram = (rng, dayTeams) => {
 };
 
 const genMissingVowels = (rng, dayTeams, avoid = []) => {
-  const candidates = (dayTeams || ALL_TEAMS).filter((t) => !avoid.includes(t));
-  const team = pick(rng, candidates.length ? candidates : ALL_TEAMS);
-  const star = TEAMS[team].star;
-  const usePlayer = star && rng() < 0.5;
-  const name = usePlayer ? star : team;
+  const base = dayTeams || ALL_TEAMS;
+  const blocked = new Set(avoid.map((a) => String(a).toLowerCase()));
+  // Retry selection until the resolved name (team OR its star) isn't one an
+  // earlier round already used — avoids the same answer twice in a day.
+  let team = pick(rng, base);
+  let usePlayer = TEAMS[team].star && rng() < 0.5;
+  let name = usePlayer ? TEAMS[team].star : team;
+  for (let attempt = 0; attempt < 20 && blocked.has(name.toLowerCase()); attempt++) {
+    team = pick(rng, base);
+    usePlayer = TEAMS[team].star && rng() < 0.5;
+    name = usePlayer ? TEAMS[team].star : team;
+  }
   return {
     type: 'missingVowels',
     text: 'The vowels have gone missing. Who or what is this?',
@@ -335,23 +343,51 @@ const genStandard = (rng, date, dayTeams) => {
 
 // --- Build a day ------------------------------------------------------------
 
+// The answer "subject" of a round, used to keep one daily from asking about
+// the same nation/player/value twice. Timeline has no single subject.
+const answerKey = (round) => {
+  const a = round.answer || {};
+  if (a.correctAnswer) return a.correctAnswer.toLowerCase();
+  if (a.correctValue !== undefined) return `#${a.correctValue}`;
+  return null;
+};
+
 const buildDay = (date, dayIndex) => {
   const rng = seedrandom(`worldcupple-2026-${date}`);
   const dayTeams = teamsOfDay(date);
 
-  const anagram = genAnagram(rng, dayTeams);
-  const rounds = [
-    genStandard(rng, date, dayTeams),
-    anagram,
-    genMissingVowels(rng, dayTeams, [anagram.answer.correctAnswer]),
-    genHigherLower(rng, dayTeams),
-    genClosestGuess(rng, date, dayIndex),
-    genYearGuesser(rng, dayTeams, dayIndex),
-    genCareerPath(rng, dayTeams, dayIndex),
-    genCrestMatch(rng, dayTeams),
-    genTimeline(rng),
-    genOddOneOut(rng, dayTeams)
-  ];
+  // Each generator takes only an rng here so the dedup pass can re-roll any one
+  // round in isolation with a fresh seed.
+  const generators = {
+    standard: (r) => genStandard(r, date, dayTeams),
+    anagram: (r) => genAnagram(r, dayTeams),
+    missingVowels: (r, avoid) => genMissingVowels(r, dayTeams, avoid),
+    higherLower: (r) => genHigherLower(r, dayTeams),
+    closestGuess: (r) => genClosestGuess(r, date, dayIndex),
+    yearGuesser: (r) => genYearGuesser(r, dayTeams, dayIndex),
+    careerPath: (r) => genCareerPath(r, dayTeams, dayIndex),
+    crestMatch: (r) => genCrestMatch(r, dayTeams),
+    timelineOrder: (r) => genTimeline(r),
+    oddOneOut: (r) => genOddOneOut(r, dayTeams)
+  };
+
+  const order = ['standard', 'anagram', 'missingVowels', 'higherLower', 'closestGuess',
+    'yearGuesser', 'careerPath', 'crestMatch', 'timelineOrder', 'oddOneOut'];
+
+  // Build in order, re-rolling any round whose answer subject already appeared
+  // earlier in the day (up to a few tries, then accept to stay deterministic).
+  const used = new Set();
+  const rounds = order.map((type) => {
+    let round = generators[type](rng, [...used]);
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const key = answerKey(round);
+      if (!key || !used.has(key)) break;
+      round = generators[type](seedrandom(`worldcupple-2026-${date}-${type}-${attempt}`), [...used]);
+    }
+    const key = answerKey(round);
+    if (key) used.add(key);
+    return round;
+  });
 
   // Shuffle the order so every daily surprises (but keep trivia first as a warm-up).
   const [first, ...rest] = rounds;
@@ -400,8 +436,14 @@ const run = async () => {
   if (DRY_RUN) {
     for (const day of days) {
       console.log(`\n${day.date} — ${day.theme}`);
-      day.slots.forEach(({ id, round }, i) =>
-        console.log(`  ${i + 1}. [${round.type}] ${round.text}  (${id})`));
+      day.slots.forEach(({ id, round }, i) => {
+        console.log(`  ${i + 1}. [${round.type}] ${round.text}  (${id})`);
+        if (VERBOSE) {
+          const shown = round.type === 'standard' ? { options: round.options } : round.payload;
+          console.log(`        shows:  ${JSON.stringify(shown)}`);
+          console.log(`        answer: ${JSON.stringify(ROUND_TYPES[round.type].answerDoc(round))}`);
+        }
+      });
     }
     console.log('\n[dry run] nothing written.');
     process.exit(0);
