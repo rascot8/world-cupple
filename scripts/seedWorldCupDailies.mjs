@@ -13,22 +13,33 @@
  * idempotent; existing quiz docs are never clobbered unless --force-quizzes
  * (protects content edited in the admin panel).
  *
+ * Auth: uses the Firebase Admin SDK, which bypasses Firestore security rules,
+ * so it can seed even with the production rules deployed. Point it at a
+ * service-account key one of two ways:
+ *   - export GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccount.json, or
+ *   - drop the key at scripts/serviceAccount.json (gitignored).
+ * Generate one in Firebase console → Project settings → Service accounts →
+ * Generate new private key. Treat it as a secret; never commit it.
+ *
  * Usage:
- *   node scripts/seedWorldCupDailies.mjs [--dry-run] [--force-quizzes]
+ *   node scripts/seedWorldCupDailies.mjs [--dry-run] [--verbose] [--force-quizzes]
  *        [--date 2026-06-15] [--from 2026-06-12] [--to 2026-07-19]
+ *   GOOGLE_APPLICATION_CREDENTIALS=./serviceAccount.json npm run seed:worldcup
+ *
+ * (--dry-run validates and prints every round without touching Firebase and
+ * needs no credentials.)
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import seedrandom from 'seedrandom';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, writeBatch, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { initializeApp, cert, applicationDefault } from 'firebase-admin/app';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { ROUND_TYPES } from '../src/utils/roundTypes.js';
 import { TEAMS, flagUrl, VENUES, NUMBER_FACTS, YEAR_FACTS, TIMELINE_EVENTS, LEGENDS } from './data/worldcupFacts.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '..');
 
 const args = process.argv.slice(2);
 const argValue = (name) => {
@@ -45,25 +56,24 @@ const todayStr = new Date().toISOString().slice(0, 10);
 const FROM = argValue('--date') || argValue('--from') || todayStr;
 const TO = argValue('--date') || argValue('--to') || TOURNAMENT_END;
 
-// --- Firebase config: .env.local first, fallback to the project defaults ---
-const loadEnvLocal = () => {
-  const envPath = path.join(ROOT, '.env.local');
-  if (!fs.existsSync(envPath)) return {};
-  const env = {};
-  for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/);
-    if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+// --- Admin SDK credentials -------------------------------------------------
+// GOOGLE_APPLICATION_CREDENTIALS wins; otherwise look for a local key file.
+const LOCAL_KEY = path.join(__dirname, 'serviceAccount.json');
+const resolveCredential = () => {
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    return applicationDefault(); // picks up the env-var path automatically
   }
-  return env;
-};
-const env = loadEnvLocal();
-const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || 'AIzaSyAKhlBJk6gAZ5oNrCDniNGmrDOqPSLeirI',
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || 'triviaworldcup-3930a.firebaseapp.com',
-  projectId: env.VITE_FIREBASE_PROJECT_ID || 'triviaworldcup-3930a',
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || 'triviaworldcup-3930a.firebasestorage.app',
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '909476377418',
-  appId: env.VITE_FIREBASE_APP_ID || '1:909476377418:web:e741d725943865572207b3'
+  if (fs.existsSync(LOCAL_KEY)) {
+    return cert(JSON.parse(fs.readFileSync(LOCAL_KEY, 'utf8')));
+  }
+  console.error(
+    'No service-account credentials found.\n' +
+    '  Set GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccount.json, or\n' +
+    `  place the key at ${LOCAL_KEY} (gitignored).\n` +
+    '  Generate one: Firebase console → Project settings → Service accounts → Generate new private key.\n' +
+    '  (Tip: run with --dry-run to preview without any credentials.)'
+  );
+  process.exit(1);
 };
 
 // --- Helpers ---------------------------------------------------------------
@@ -449,22 +459,22 @@ const run = async () => {
     process.exit(0);
   }
 
-  const app = initializeApp(firebaseConfig);
+  const app = initializeApp({ credential: resolveCredential() });
   const db = getFirestore(app);
 
-  let batch = writeBatch(db);
+  let batch = db.batch();
   let ops = 0;
   const flush = async () => {
     if (ops > 0) await batch.commit();
-    batch = writeBatch(db);
+    batch = db.batch();
     ops = 0;
   };
 
   let created = 0;
   let skipped = 0;
   for (const day of days) {
-    const quizRef = doc(db, 'dailyQuizzes', day.date);
-    if (!FORCE_QUIZZES && (await getDoc(quizRef)).exists()) {
+    const quizRef = db.collection('dailyQuizzes').doc(day.date);
+    if (!FORCE_QUIZZES && (await quizRef.get()).exists) {
       skipped++;
       continue;
     }
@@ -483,8 +493,8 @@ const run = async () => {
       } else {
         questionDoc.payload = round.payload;
       }
-      batch.set(doc(db, 'questions', id), questionDoc);
-      batch.set(doc(db, 'questionAnswers', id), ROUND_TYPES[round.type].answerDoc(round));
+      batch.set(db.collection('questions').doc(id), questionDoc);
+      batch.set(db.collection('questionAnswers').doc(id), ROUND_TYPES[round.type].answerDoc(round));
       ops += 2;
       if (ops >= 450) await flush();
     }

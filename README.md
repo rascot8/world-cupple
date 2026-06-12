@@ -140,18 +140,30 @@ blocked, so the editor can't be used to cheat.
    anagram, missing vowels, higher/lower, closest guess, year guesser, career
    path, crest match, timeline, odd one out; see `src/utils/roundTypes.js`).
    Seed a themed daily for every remaining tournament day (each day's rounds
-   are generated from that day's real fixtures):
+   are generated from that day's real fixtures).
+
+   Unlike `migrate:questions`, this script uses the **Firebase Admin SDK**, so
+   it works even with the production security rules already deployed. It needs a
+   **service-account key**:
+
+   1. Firebase console → ⚙️ Project settings → **Service accounts** →
+      **Generate new private key** → download the JSON.
+   2. Either `export GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccount.json`,
+      or save it as `scripts/serviceAccount.json` (already gitignored).
+
+   The key grants full project access — treat it as a secret and never commit it.
 
    ```bash
-   npm run seed:worldcup -- --dry-run             # preview every generated round
-   npm run seed:worldcup                          # today → July 19, 2026
-   node scripts/seedWorldCupDailies.mjs --date 2026-06-15   # one day
+   npm run seed:worldcup -- --dry-run             # preview every round (NO key needed)
+   npm run seed:worldcup -- --dry-run --verbose   # also print payloads + answers
+   npm run seed:worldcup                          # today → July 19, 2026 (needs the key)
+   npm run seed:worldcup -- --date 2026-06-15      # just one day
    ```
 
    Fixture data lives in `scripts/data/wc2026-fixtures.json` and the facts the
-   generators draw on in `scripts/data/worldcupFacts.mjs`. Like the migration,
-   existing quiz docs are skipped unless `--force-quizzes` is passed, so admin
-   edits made in `/admin` survive re-runs.
+   generators draw on in `scripts/data/worldcupFacts.mjs`. Existing quiz docs are
+   skipped unless `--force-quizzes` is passed, so admin edits made in `/admin`
+   survive re-runs.
 
 2. **Deploy the security rules** — `firebase deploy --only firestore:rules` (or
    paste `firestore.rules` into Firebase console → Firestore → Rules). This
