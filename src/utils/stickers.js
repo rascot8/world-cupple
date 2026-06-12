@@ -13,7 +13,7 @@
 export const RARITIES = {
   common: {
     id: 'common',
-    label: 'Common',
+    label: 'Base',
     dupeCP: 5,
     text: 'text-gray-300',
     frame: 'border-white/20 bg-gradient-to-b from-white/10 to-white/[0.03]',
@@ -22,7 +22,7 @@ export const RARITIES = {
   },
   rare: {
     id: 'rare',
-    label: 'Rare',
+    label: 'Pro',
     dupeCP: 15,
     text: 'text-sky-300',
     frame: 'border-sky-400/50 bg-gradient-to-b from-sky-500/20 to-sky-900/10',
@@ -31,7 +31,7 @@ export const RARITIES = {
   },
   epic: {
     id: 'epic',
-    label: 'Epic',
+    label: 'World Class',
     dupeCP: 40,
     text: 'text-fuchsia-300',
     frame: 'border-fuchsia-400/60 bg-gradient-to-b from-fuchsia-500/25 to-purple-900/20',
@@ -40,7 +40,7 @@ export const RARITIES = {
   },
   legendary: {
     id: 'legendary',
-    label: 'Legendary',
+    label: 'Icon',
     dupeCP: 100,
     text: 'text-yellow-300',
     frame: 'border-yellow-400/80 foil-legendary',
@@ -147,8 +147,8 @@ export const PITY_THRESHOLD = 10; // packs without a legendary before one is for
 export const PACKS = {
   bronze: {
     id: 'bronze',
-    name: 'Bronze Pack',
-    icon: '📦',
+    name: 'Matchday Pack',
+    icon: '⚽',
     size: 3,
     costFP: 50,
     costCoins: 15,
@@ -160,8 +160,8 @@ export const PACKS = {
   },
   silver: {
     id: 'silver',
-    name: 'Silver Pack',
-    icon: '💿',
+    name: 'Pro Pack',
+    icon: '⚡',
     size: 4,
     costFP: 150,
     costCoins: 40,
@@ -173,8 +173,8 @@ export const PACKS = {
   },
   gold: {
     id: 'gold',
-    name: 'Gold Pack',
-    icon: '🥇',
+    name: 'World Class Pack',
+    icon: '🏆',
     size: 4,
     costFP: 400,
     costCoins: 100,
@@ -186,8 +186,8 @@ export const PACKS = {
   },
   legendary: {
     id: 'legendary',
-    name: 'Legendary Pack',
-    icon: '💎',
+    name: 'Icon Pack',
+    icon: '👑',
     size: 5,
     costFP: 1000,
     costCoins: 250,

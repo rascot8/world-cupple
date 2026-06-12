@@ -3,11 +3,12 @@ import { ArrowLeft, Coins, Star, Flame, Tv, Shield, Sparkles, Check } from 'luci
 import { auth } from '../config/firebase';
 import BrandHeader from './BrandHeader';
 import CheckoutModal from './CheckoutModal';
+import PackVisual from './PackVisual';
 import { useAudio } from '../contexts/AudioContext';
 import {
   COIN_BUNDLES, STORE_ITEMS, VIP, getDailyDeal, msUntilUtcMidnight, formatCountdown
 } from '../utils/economy';
-import { PACKS, PITY_THRESHOLD } from '../utils/stickers';
+import { PACKS, PITY_THRESHOLD, PACK_FIELDS } from '../utils/stickers';
 import { purchaseCoins, purchaseItem, purchaseVip, purchasePack } from '../utils/economyService';
 import { getTodayUTCString } from '../utils/dailySeed';
 
@@ -241,33 +242,32 @@ const StoreScreen = ({ userData, onBack, onUpdateUser, onOpenPack }) => {
             })}
 
             {/* Sticker Packs */}
-            {Object.values(PACKS).map(pack => (
-              <div key={pack.id} className="glass-panel p-4 flex flex-col gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-3xl shrink-0">{pack.icon}</span>
-                  <div className="min-w-0">
-                    <p className="font-black text-white">{pack.name}</p>
-                    <p className="text-[10px] text-gray-400 font-bold leading-snug">{pack.blurb}</p>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              {Object.values(PACKS).map(pack => (
+                <div key={pack.id} className="glass-panel p-3 flex flex-col items-center text-center relative overflow-hidden group">
+                  <PackVisual pack={pack} className="w-16 sm:w-20 mb-3 group-hover:scale-110 transition-transform duration-300" />
+                  <div className="flex-1 flex flex-col items-center w-full">
+                    <p className="text-[9px] text-gray-400 font-bold leading-snug mb-3 line-clamp-2 min-h-[28px]">{pack.blurb}</p>
+                    <div className="flex flex-col gap-1.5 w-full mt-auto">
+                      <button
+                        onClick={() => buyPackNow(pack.id, 'fp')}
+                        disabled={busy === `${pack.id}_fp` || (userData?.fp || 0) < pack.costFP}
+                        className="w-full py-2 rounded-lg bg-white/10 border border-white/20 text-gold-glow font-black text-[10px] sm:text-xs tabular-nums hover:bg-white/15 transition-colors disabled:opacity-40"
+                      >
+                        {justBought === `${pack.id}_fp` ? <Check className="w-3 h-3 mx-auto" /> : <>⭐ {pack.costFP}</>}
+                      </button>
+                      <button
+                        onClick={() => buyPackNow(pack.id, 'coins')}
+                        disabled={busy === `${pack.id}_coins` || coins < pack.costCoins}
+                        className="w-full py-2 rounded-lg bg-amber-400/15 border border-amber-300/40 text-amber-300 font-black text-[10px] sm:text-xs tabular-nums hover:bg-amber-400/25 transition-colors disabled:opacity-40"
+                      >
+                        {justBought === `${pack.id}_coins` ? <Check className="w-3 h-3 mx-auto" /> : <>🪙 {pack.costCoins}</>}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-2 w-full mt-1">
-                  <button
-                    onClick={() => buyPackNow(pack.id, 'fp')}
-                    disabled={busy === `${pack.id}_fp` || (userData?.fp || 0) < pack.costFP}
-                    className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-gold-glow font-black text-xs sm:text-sm tabular-nums hover:bg-white/15 transition-colors disabled:opacity-40"
-                  >
-                    {justBought === `${pack.id}_fp` ? <Check className="w-4 h-4 mx-auto" /> : <>⭐ {pack.costFP} FP</>}
-                  </button>
-                  <button
-                    onClick={() => buyPackNow(pack.id, 'coins')}
-                    disabled={busy === `${pack.id}_coins` || coins < pack.costCoins}
-                    className="flex-1 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-300/40 text-amber-300 font-black text-xs sm:text-sm tabular-nums hover:bg-amber-400/25 transition-colors disabled:opacity-40"
-                  >
-                    {justBought === `${pack.id}_coins` ? <Check className="w-4 h-4 mx-auto" /> : <>🪙 {pack.costCoins}</>}
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 

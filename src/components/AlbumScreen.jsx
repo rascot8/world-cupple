@@ -3,7 +3,8 @@ import { ArrowLeft, Gift, Coins, X, Sparkles } from 'lucide-react';
 import { auth } from '../config/firebase';
 import BrandHeader from './BrandHeader';
 import StickerCard from './StickerCard';
-import { STICKERS, PAGES, PACKS, RARITIES, albumProgress, PAGE_REWARD_COINS } from '../utils/stickers';
+import PackVisual from './PackVisual';
+import { STICKERS, PAGES, PACKS, RARITIES, albumProgress, PAGE_REWARD_COINS, PACK_FIELDS } from '../utils/stickers';
 import { claimPageReward, sellDuplicateSticker } from '../utils/economyService';
 import { useAudio } from '../contexts/AudioContext';
 
@@ -140,17 +141,20 @@ const AlbumScreen = ({ userData, onBack, onUpdateUser, onOpenPack, onGoStore }) 
               No packs — visit the store 🛒
             </button>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2 pb-2">
               {packInventory.map(({ id, count }) => (
                 <button
                   key={id}
                   onClick={() => count > 0 && onOpenPack(id)}
                   disabled={count === 0}
-                  className={`p-3 rounded-xl border-2 flex flex-col items-center transition-all ${count > 0 ? `bg-gradient-to-b ${PACKS[id].gradient} ${PACKS[id].ring} hover:scale-[1.04] active:scale-95 cursor-pointer` : 'bg-white/5 border-white/10 opacity-40'}`}
+                  className={`relative transition-all w-full ${count > 0 ? 'hover:scale-[1.04] active:scale-95 cursor-pointer' : 'opacity-40 grayscale cursor-not-allowed'}`}
                 >
-                  <span className="text-2xl">{PACKS[id].icon}</span>
-                  <span className="text-[9px] font-black text-white uppercase tracking-wide mt-1">×{count}</span>
-                  {count > 0 && <span className="text-[8px] font-black text-white/90 uppercase">OPEN</span>}
+                  <PackVisual pack={PACKS[id]} count={count} showCount={true} />
+                  {count > 0 && (
+                    <div className="absolute -bottom-2 inset-x-0 mx-auto w-11/12 py-0.5 rounded bg-black/80 border border-white/20 text-center text-[8px] font-black text-white/90 uppercase tracking-widest z-20">
+                      OPEN
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

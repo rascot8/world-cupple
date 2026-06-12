@@ -7,10 +7,14 @@ const WelcomeModal = ({ onClose, forceShow = false }) => {
   useEffect(() => {
     if (forceShow) {
       setIsVisible(true);
-    } else if (localStorage.getItem('hasSeenWelcome') !== 'true') {
-      setIsVisible(true);
     }
   }, [forceShow]);
+
+  useEffect(() => {
+    if (!forceShow && localStorage.getItem('hasSeenWelcome') !== 'true') {
+      setIsVisible(true);
+    }
+  }, []);
 
   const handleClose = () => {
     setIsVisible(false);

@@ -3,6 +3,7 @@ import { Sparkles, Coins } from 'lucide-react';
 import { PACKS, RARITIES } from '../utils/stickers';
 import { useAudio } from '../contexts/AudioContext';
 import StickerCard from './StickerCard';
+import PackVisual from './PackVisual';
 
 /**
  * The pack-opening ceremony: tap to rip → flip each card → summary.
@@ -64,12 +65,10 @@ const PackOpeningModal = ({ packId, result, remainingPacks = 0, onOpenAnother, o
           <p className="text-gray-400 font-bold uppercase tracking-[0.3em] text-xs mb-6">You got a</p>
           <button
             onClick={ripOpen}
-            className={`relative w-56 h-72 rounded-3xl border-4 ${pack.ring} bg-gradient-to-br ${pack.gradient} animate-pack-wiggle shadow-2xl flex flex-col items-center justify-center gap-3 cursor-pointer`}
+            className="w-56 animate-pack-wiggle cursor-pointer transition-transform hover:scale-105 active:scale-95 flex flex-col items-center"
           >
-            <div className="absolute inset-x-0 top-0 h-10 bg-black/20 rounded-t-[1.25rem] border-b-2 border-dashed border-white/30" />
-            <span className="text-7xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">{pack.icon}</span>
-            <span className="text-2xl font-black text-white uppercase tracking-wider drop-shadow-lg">{pack.name}</span>
-            <span className="text-xs font-bold text-white/80 uppercase tracking-widest">{pack.size} stickers inside</span>
+            <PackVisual pack={pack} size="lg" className="w-full" />
+            <p className="mt-4 text-xs font-bold text-white/80 uppercase tracking-widest">{pack.size} stickers inside</p>
           </button>
           <p className="mt-8 text-fifa-neon font-black uppercase tracking-[0.25em] animate-pulse">⚡ Tap to rip it open</p>
         </div>
